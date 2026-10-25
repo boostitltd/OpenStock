@@ -27,7 +27,7 @@ describe('NYSE session', () => {
     });
 });
 
-import { getMarket, hasFinnhubQuotes, isMarketOpen } from '@/lib/markets';
+import { getMarket, hasFinnhubQuotes, hasQuotes, hasYahooQuotes, isMarketOpen, marketForCountry } from '@/lib/markets';
 
 describe('markets', () => {
     it('knows which symbols Finnhub free can price', () => {
@@ -38,6 +38,28 @@ describe('markets', () => {
         expect(hasFinnhubQuotes('BARC.L')).toBe(false);
         expect(hasFinnhubQuotes('7203.T')).toBe(false);
         expect(hasFinnhubQuotes('FX:EURUSD')).toBe(false);
+        expect(hasFinnhubQuotes('TEVA.TA')).toBe(false);
+    });
+
+    it('prices Tel Aviv listings through Yahoo, and nothing else', () => {
+        expect(hasYahooQuotes('TEVA.TA')).toBe(true);
+        expect(hasYahooQuotes('teva.ta')).toBe(true);
+        expect(hasYahooQuotes('TEVA')).toBe(false);
+        expect(hasYahooQuotes('BARC.L')).toBe(false);
+        expect(hasQuotes('TEVA.TA')).toBe(true);
+        expect(hasQuotes('AAPL')).toBe(true);
+        expect(hasQuotes('RELIANCE.NS')).toBe(false);
+    });
+
+    it('has an Israel market on Tel Aviv hours, the default for IL users', () => {
+        const il = getMarket('il');
+        expect(il.id).toBe('il');
+        expect(il.timeZone).toBe('Asia/Jerusalem');
+        expect(marketForCountry('IL')).toBe('il');
+        // Tuesday 2026-10-27 12:00 Israel: open. Saturday: closed. Tuesday 18:00 Israel: closed.
+        expect(isMarketOpen(il, new Date('2026-10-27T10:00:00Z'))).toBe(true);
+        expect(isMarketOpen(il, new Date('2026-10-31T10:00:00Z'))).toBe(false);
+        expect(isMarketOpen(il, new Date('2026-10-27T16:00:00Z'))).toBe(false);
     });
 
     it('opens each market in its own time zone', () => {

@@ -15,17 +15,18 @@ export default function PulseTile({ symbol, label, initial }: { symbol: string; 
     const live = useLiveQuotes([symbol]);
     const quote = live[symbol] ?? initial;
     const isCrypto = symbol.startsWith('BINANCE:');
+    const prefix = symbol.endsWith('.TA') ? '₪' : '$'; // Tel Aviv quotes arrive in shekels (see lib/actions/yahoo.actions.ts)
 
     return (
         <Link href={`/stocks/${encodeURIComponent(symbol)}`} className="bento-tile transition-colors hover:bg-hover/60">
             <div className="bento-head">
                 <span className="bento-ico"><LineChart /></span>
                 <span className="truncate">{label}</span>
-                <span className="mono ml-auto text-xs text-faint">{symbol.replace('BINANCE:', '')}</span>
+                <span className="mono ml-auto text-xs text-faint">{symbol.replace('BINANCE:', '').replace(/\.TA$/, '')}</span>
             </div>
             <PriceFlash value={quote?.c} className="bento-value self-start">
                 {quote?.c ? (
-                    isCrypto ? <>{formatAmount(quote.c)}<small> USDT</small></> : <><small>$</small>{formatAmount(quote.c)}</>
+                    isCrypto ? <>{formatAmount(quote.c)}<small> USDT</small></> : <><small>{prefix}</small>{formatAmount(quote.c)}</>
                 ) : '—'}
             </PriceFlash>
             <div className="bento-foot">

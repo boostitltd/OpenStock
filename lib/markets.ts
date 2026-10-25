@@ -1,5 +1,6 @@
 // Markets OpenStock can show for free. Coverage was tested against the free data sources:
 //   - Finnhub free: US stocks and crypto only (every other exchange returns 403).
+//   - Yahoo Finance (unofficial chart endpoint): Tel Aviv (.TA) quotes, delayed ~15-20 min. See lib/actions/yahoo.actions.ts.
 //   - TradingView embeds: US, crypto, forex live; TSX + ASX delayed; BSE + XETRA end-of-day.
 //     NSE and TVC indices (NIFTY, FTSE, DAX, N225, HSI) are blocked in embeds; LSE, Tokyo, Hong Kong and
 //     others block only the candle chart (see CHART_BLOCKED_EXCHANGES in lib/utils.ts).
@@ -7,7 +8,7 @@
 
 import { isInternationalSymbol } from "@/lib/utils";
 
-export type MarketId = 'us' | 'in' | 'de' | 'ca' | 'au' | 'crypto' | 'fx';
+export type MarketId = 'us' | 'il' | 'in' | 'de' | 'ca' | 'au' | 'crypto' | 'fx';
 
 type Hours = { open: number; close: number }; // minutes of the local day
 
@@ -18,8 +19,8 @@ export type Market = {
     timeZone: string;
     hours: Hours | '24/7' | '24/5';
     feed: 'Live' | 'Delayed' | 'End of day';
-    // Tiles on the dashboard. `finnhub` set = native tile with our own cached quote; otherwise a TradingView quote.
-    pulse: { symbol: string; label: string; finnhub?: string }[];
+    // Tiles on the dashboard. `finnhub` or `yahoo` set = native tile with our own cached quote; otherwise a TradingView quote.
+    pulse: { symbol: string; label: string; finnhub?: string; yahoo?: string }[];
     groups: { title: string; symbols: [symbol: string, name: string][] }[];
     heatmap?: 'stocks' | 'crypto';
     news: 'stock' | 'crypto' | 'forex';
@@ -42,6 +43,23 @@ export const MARKETS: Market[] = [
             { title: 'Consumer', symbols: [['NASDAQ:AMZN', 'Amazon'], ['NASDAQ:TSLA', 'Tesla'], ['NYSE:WMT', 'Walmart'], ['NASDAQ:COST', 'Costco'], ['NYSE:KO', 'Coca-Cola'], ['NASDAQ:NFLX', 'Netflix']] },
         ],
         heatmap: 'stocks', news: 'stock',
+    },
+    {
+        // TASE trades Monday to Friday since January 2026 (Friday closes early, ~14:00; not modelled).
+        // Quotes and alerts come from Yahoo Finance (delayed); charts, profiles and financials from TradingView embeds.
+        id: 'il', name: 'Israel', short: 'IL', timeZone: 'Asia/Jerusalem', hours: { open: hm(9, 59), close: hm(17, 14) }, feed: 'Delayed',
+        pulse: [
+            { symbol: 'TASE:TA35', label: 'TA-35' },
+            { symbol: 'TASE:TA125', label: 'TA-125' },
+            { symbol: 'TASE:TEVA', label: 'Teva', yahoo: 'TEVA.TA' },
+            { symbol: 'TASE:LUMI', label: 'Bank Leumi', yahoo: 'LUMI.TA' },
+        ],
+        groups: [
+            { title: 'Banks & finance', symbols: [['TASE:LUMI', 'Bank Leumi'], ['TASE:POLI', 'Bank Hapoalim'], ['TASE:DSCT', 'Discount Bank'], ['TASE:MZTF', 'Mizrahi Tefahot'], ['TASE:PHOE', 'Phoenix'], ['TASE:HARL', 'Harel']] },
+            { title: 'Technology & defence', symbols: [['TASE:NICE', 'NICE'], ['TASE:ESLT', 'Elbit Systems'], ['TASE:TSEM', 'Tower Semiconductor'], ['TASE:NVMI', 'Nova']] },
+            { title: 'Industry & real estate', symbols: [['TASE:TEVA', 'Teva'], ['TASE:ICL', 'ICL Group'], ['TASE:ORL', 'Bazan'], ['TASE:AZRG', 'Azrieli'], ['TASE:BEZQ', 'Bezeq'], ['TASE:ELAL', 'El Al']] },
+        ],
+        news: 'stock',
     },
     {
         id: 'in', name: 'India', short: 'IN', timeZone: 'Asia/Kolkata', hours: { open: hm(9, 15), close: hm(15, 30) }, feed: 'End of day',
@@ -138,7 +156,7 @@ export const MARKET_COOKIE = 'openstock-market';
 
 export const getMarket = (id?: string | null) => MARKETS.find((m) => m.id === id) ?? MARKETS[0];
 
-const COUNTRY_MARKET: Record<string, MarketId> = { IN: 'in', DE: 'de', CA: 'ca', AU: 'au' };
+const COUNTRY_MARKET: Record<string, MarketId> = { IL: 'il', IN: 'in', DE: 'de', CA: 'ca', AU: 'au' };
 export const marketForCountry = (country?: string | null): MarketId => COUNTRY_MARKET[country ?? ''] ?? DEFAULT_MARKET;
 
 // Finnhub free can price (and so alert on) US listings and Binance pairs only.
@@ -166,3 +184,12 @@ export function isMarketOpen(market: Market, date = new Date()) {
     }
     return day >= 1 && day <= 5 && minutes >= market.hours.open && minutes < market.hours.close;
 }
+
+// Tel Aviv listings are priced through Yahoo Finance instead (delayed).
+export const hasYahooQuotes = (symbol: string) => symbol.toUpperCase().endsWith('.TA');
+
+// Anything we can price ourselves, from whichever source: live header, watchlist prices and price alerts.
+export const hasQuotes = (symbol: string) => hasFinnhubQuotes(symbol) || hasYahooQuotes(symbol);
+
+// The native pulse-tile symbol for a tile, whichever source prices it.
+export const pulseQuoteSymbol = (tile: Market['pulse'][number]) => tile.finnhub ?? tile.yahoo;

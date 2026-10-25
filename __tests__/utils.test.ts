@@ -28,6 +28,11 @@ describe('formatSymbolForTradingView', () => {
         expect(formatSymbolForTradingView('6488.TWO')).toBe('TPEX:6488');
     });
 
+    it('maps Tel Aviv (.TA) to TASE prefix', () => {
+        expect(formatSymbolForTradingView('TEVA.TA')).toBe('TASE:TEVA');
+        expect(formatSymbolForTradingView('lumi.ta')).toBe('TASE:LUMI');
+    });
+
     it('maps Tokyo (.T) to TSE prefix', () => {
         expect(formatSymbolForTradingView('7203.T')).toBe('TSE:7203');
     });

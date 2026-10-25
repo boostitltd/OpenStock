@@ -5,7 +5,7 @@ import StockLivePrice from "@/components/stocks/StockLivePrice";
 import { isStockInWatchlist } from "@/lib/actions/watchlist.actions";
 import { getCompanyProfile, getLiveQuotes } from "@/lib/actions/finnhub.actions";
 import { formatNumber, formatPrice, formatSymbolForTradingView } from "@/lib/utils";
-import { hasFinnhubQuotes } from "@/lib/markets";
+import { hasQuotes } from "@/lib/markets";
 import { symbolInfoConfig } from "@/lib/constants";
 import TradingViewWidget from "@/components/TradingViewWidget";
 
@@ -23,7 +23,7 @@ async function TradingViewHeader({ symbol }: { symbol: string }) {
                 <div className="flex items-center gap-2">
                     <WatchlistButton symbol={symbol} company={symbol} isInWatchlist={isInWatchlist} />
                     <span className="pill h-9 px-3" title="Price alerts need a quote source we can check every 5 minutes">
-                        <Bell /> Alerts: US stocks and crypto
+                        <Bell /> Alerts: US, Tel Aviv and crypto
                     </span>
                 </div>
             </div>
@@ -35,7 +35,7 @@ async function TradingViewHeader({ symbol }: { symbol: string }) {
 }
 
 export default async function StockHeader({ symbol }: { symbol: string }) {
-    if (!hasFinnhubQuotes(symbol)) return <TradingViewHeader symbol={symbol} />;
+    if (!hasQuotes(symbol)) return <TradingViewHeader symbol={symbol} />;
 
     const [isInWatchlist, quotes, profile] = await Promise.all([
         isStockInWatchlist(symbol),

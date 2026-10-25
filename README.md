@@ -80,7 +80,7 @@
 ## 🔋 Features <a name="features"></a>
 
 **Markets**
-- A dashboard for seven markets: US, India, Germany, Canada, Australia, Crypto and Forex, with an index pulse, a sector heatmap, market leaders and top stories.
+- A dashboard for eight markets: US, Israel, India, Germany, Canada, Australia, Crypto and Forex, with an index pulse, a sector heatmap, market leaders and top stories.
 - Search every exchange Finnhub covers with **⌘K**, and keep stocks open as browser-style tabs.
 
 **Stock pages**
@@ -260,10 +260,11 @@ __tests__/        Vitest tests
 
 ## 🌍 Market support <a name="market-support"></a>
 
-| Market | Charts (TradingView embeds) | Quotes, watchlist prices, alerts (Finnhub free) |
+| Market | Charts (TradingView embeds) | Quotes, watchlist prices, alerts |
 |---|---|---|
-| 🇺🇸 United States | Live | Yes |
-| Crypto (Binance pairs) | Live | Yes |
+| 🇺🇸 United States | Live | Yes (Finnhub) |
+| Crypto (Binance pairs) | Live | Yes (Finnhub) |
+| 🇮🇱 Israel (TASE, `.TA`) | Delayed | Yes, delayed (Yahoo Finance) |
 | Forex | Live | No |
 | 🇨🇦 Canada, 🇦🇺 Australia | Delayed | No |
 | 🇮🇳 India (BSE; `.NS` symbols chart on BSE), 🇩🇪 Germany | End of day | No |

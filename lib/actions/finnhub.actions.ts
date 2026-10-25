@@ -4,7 +4,8 @@ import { getDateRange, validateArticle, formatArticle } from '@/lib/utils';
 import { POPULAR_STOCKS } from '@/lib/constants';
 import { cache } from 'react';
 import { QUOTE_TTL_SECONDS } from '@/lib/market-data';
-import { hasFinnhubQuotes } from '@/lib/markets';
+import { hasFinnhubQuotes, hasQuotes, hasYahooQuotes } from '@/lib/markets';
+import { getYahooQuote } from '@/lib/actions/yahoo.actions';
 import { getSession } from '@/lib/better-auth/auth';
 
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
@@ -172,6 +173,8 @@ function getExchangeLabel(symbol: string, exchange?: string) {
 }
 
 export async function getQuote(symbol: string, revalidateSeconds = 0) {
+    // Tel Aviv listings aren't on Finnhub's free plan; Yahoo prices them (delayed) in the same shape
+    if (hasYahooQuotes(symbol)) return getYahooQuote(symbol, revalidateSeconds);
     try {
         const url = `${FINNHUB_BASE_URL}/quote?symbol=${encodeURIComponent(symbol)}`;
         // Real-time by default; shared views pass a short cache to stay inside Finnhub's 60 req/min
@@ -184,12 +187,17 @@ export async function getQuote(symbol: string, revalidateSeconds = 0) {
 
 // Shared, short-lived quotes for anything shown live on screen (pages and /api/quotes)
 export async function getLiveQuotes(symbols: string[]) {
-    // Symbols the free plan can't price are skipped instead of spending a request on a 403
-    const quotes = await Promise.all(symbols.map((s) => (hasFinnhubQuotes(s) ? getQuote(s, LIVE_QUOTE_TTL) : null)));
+    // Symbols no source can price are skipped instead of spending a request on a 403
+    const quotes = await Promise.all(symbols.map((s) => (hasQuotes(s) ? getQuote(s, LIVE_QUOTE_TTL) : null)));
     return Object.fromEntries(symbols.map((s, i) => [s, quotes[i]?.c ? quotes[i] : null]));
 }
 
-export async function getCompanyProfile(symbol: string) {
+export async function getCompanyProfile(symbol: string): Promise<FinnhubCompanyProfile | null> {
+    // Tel Aviv: name, currency and exchange ride along with the Yahoo quote (no logo or market cap there)
+    if (hasYahooQuotes(symbol)) {
+        const quote = await getYahooQuote(symbol, 86400);
+        return quote ? { name: quote.name || symbol, currency: quote.currency, exchange: quote.exchange, ticker: symbol } : null;
+    }
     // Profiles exist for stocks Finnhub free covers; crypto pairs and non-US listings have none
     if (symbol.includes(':') || !hasFinnhubQuotes(symbol)) return null;
     try {
@@ -226,7 +234,7 @@ export async function getWatchlistData(symbols: string[]) {
 
     // Fetch quotes and profiles in parallel
     const promises = symbols.map(async (sym) => {
-        const covered = hasFinnhubQuotes(sym);
+        const covered = hasQuotes(sym);
         const [quote, profile] = covered
             ? await Promise.all([getQuote(sym, LIVE_QUOTE_TTL), getCompanyProfile(sym)])
             : [null, null];

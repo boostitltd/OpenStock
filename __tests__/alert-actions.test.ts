@@ -72,7 +72,7 @@ describe('alert actions are scoped to the session user', () => {
     });
 
     it('refuses alerts the checker could never price', async () => {
-        await expect(createAlert({ symbol: 'RELIANCE.NS', targetPrice: 1000, condition: 'ABOVE' })).rejects.toThrow('US stocks and crypto');
+        await expect(createAlert({ symbol: 'RELIANCE.NS', targetPrice: 1000, condition: 'ABOVE' })).rejects.toThrow('US stocks, Tel Aviv and crypto');
         expect(create).not.toHaveBeenCalled();
     });
 });
