@@ -89,6 +89,11 @@
 - Financials, technicals and the company profile.
 - Sentiment from Reddit, X, news and Polymarket (with an Adanos key).
 
+**Portfolio (monthly investing)**
+- Record every buy with the reason and the target that will make it a sell candidate; sells close lots FIFO.
+- Positions marked to market in shekels or dollars (Tel Aviv and New York in one total), with weights and realised P&L.
+- A buy-day page: set target weights and a monthly amount, get the whole-share buys that land closest to target, and the trims that drifted past your tolerance.
+
 **Watchlist and alerts**
 - A watchlist of up to 50 stocks, saved to your account.
 - Price alerts above or below a target, checked every 5 minutes and emailed to you (in realtime mode).

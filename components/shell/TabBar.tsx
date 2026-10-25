@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Menu, Plus, Star, X } from "lucide-react";
+import { Briefcase, LayoutDashboard, Menu, Plus, Star, X } from "lucide-react";
 import { openSearch } from "@/components/SearchCommand";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,8 @@ const MAX_TABS = 12;
 const PAGE_LABELS: Record<string, string> = {
     '/dashboard': 'Overview',
     '/watchlist': 'Watchlist',
+    '/portfolio': 'Portfolio',
+    '/portfolio/buy-day': 'Buy day',
     '/profile': 'Profile',
 };
 
@@ -99,6 +101,7 @@ const TabBar = ({ onMenu }: { onMenu: () => void }) => {
                             <Link href={path} aria-current={active ? 'page' : undefined} className="flex min-w-0 flex-1 items-center gap-2 before:absolute before:inset-0 before:content-['']">
                                 {path === '/dashboard' && <LayoutDashboard />}
                                 {path === '/watchlist' && <Star />}
+                                {path.startsWith('/portfolio') && <Briefcase />}
                                 <span className={cn('tab-label', isStock && 'mono text-[13px]')}>{tabLabel(path)}</span>
                             </Link>
                             {!pinned && (

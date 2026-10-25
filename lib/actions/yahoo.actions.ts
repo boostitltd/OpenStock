@@ -112,3 +112,11 @@ export async function getYahooQuote(symbol: string, revalidateSeconds = 0): Prom
     if (hit.freshUntil < Date.now()) void refresh();
     return hit.value;
 }
+
+// USD→ILS from Yahoo's ILS=X pair, cached for an hour. A portfolio that mixes Tel Aviv and New York
+// needs one number to add shekels and dollars; when Yahoo is down the last good rate keeps serving.
+const FX_FALLBACK_USD_ILS = 3.6;
+export async function getUsdIls(): Promise<{ rate: number; live: boolean }> {
+    const q = await getYahooQuote('ILS=X', 3600);
+    return q?.c && q.c > 0 ? { rate: q.c, live: true } : { rate: FX_FALLBACK_USD_ILS, live: false };
+}
