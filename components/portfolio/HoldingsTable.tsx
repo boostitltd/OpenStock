@@ -43,10 +43,10 @@ export default function HoldingsTable({ holdings, base }: { holdings: Holding[];
                 <tbody>
                     {open.map((h) => (
                         <tr key={h.symbol}>
-                            <td className="max-w-[300px]">
-                                <Link href={`/stocks/${encodeURIComponent(h.symbol)}`} className="group flex min-w-0 flex-col">
+                            <td>
+                                <Link href={`/stocks/${encodeURIComponent(h.symbol)}`} className="group flex w-[260px] max-w-[260px] flex-col">
                                     <span className="truncate font-semibold text-foreground transition-colors group-hover:text-brand-ink" title={h.name}>{h.name}</span>
-                                    <span className="mono text-[12px] text-faint">{h.symbol}{h.thesis ? ` · ${h.thesis}` : ''}</span>
+                                    <span className="truncate text-[12px] text-faint" title={h.thesis}><span className="mono">{h.symbol}</span>{h.thesis ? ` · ${h.thesis}` : ''}</span>
                                 </Link>
                             </td>
                             <td className="is-num text-muted-foreground">{h.quantity}</td>

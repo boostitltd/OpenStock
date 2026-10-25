@@ -42,7 +42,7 @@ export default async function BuyDayPage({ searchParams }: { searchParams: Promi
                 </form>
             </header>
 
-            <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+            <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
                 <div className="flex min-w-0 flex-col gap-3">
                     <Panel
                         title="The plan"

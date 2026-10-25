@@ -211,6 +211,8 @@ export async function getCompanyProfile(symbol: string): Promise<FinnhubCompanyP
 }
 
 export async function getStockMetrics(symbol: string): Promise<number | null> {
+    // Finnhub free has no metrics for crypto pairs or non-US listings (403); don't spend a call to learn that
+    if (symbol.includes(':') || !hasFinnhubQuotes(symbol)) return null;
     if (FINNHUB_KEYS.length === 0) {
         console.error('FINNHUB API key is not configured');
         return null;

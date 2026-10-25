@@ -43,7 +43,7 @@ export default function PlanTable({ plan }: { plan: BuyDayPlan }) {
                                 <td className="is-num text-muted-foreground">{r.currentPct.toFixed(1)}%</td>
                                 <td className="is-num text-muted-foreground">{r.afterPct.toFixed(1)}%</td>
                                 <td className="is-num text-muted-foreground">{r.targetPct ? `${r.targetPct}%` : '—'}</td>
-                                <td className="max-w-[320px] text-[12.5px] text-faint">{r.reason}</td>
+                                <td className="min-w-[240px] whitespace-normal text-[12.5px] leading-snug text-faint">{r.reason}</td>
                             </tr>
                         );
                     })}

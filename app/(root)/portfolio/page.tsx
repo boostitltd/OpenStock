@@ -51,7 +51,7 @@ export default async function PortfolioPage() {
                 ))}
             </div>
 
-            <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+            <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
                 <Panel title="Positions" sub={settings.targets.length ? 'Weights against your targets are on the Buy day page' : 'Set target weights on the Buy day page to plan each month'}>
                     <HoldingsTable holdings={portfolio.holdings} base={base} />
                 </Panel>
