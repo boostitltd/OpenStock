@@ -5,9 +5,10 @@ import { loadPortfolio } from '@/lib/server/portfolio-data';
 import { ASSUMED_RETURN, WINDOW } from '@/lib/server/outlook';
 import { getInsight, getNews, type Headline, type Insight } from '@/lib/server/insight';
 import { baseline, pickDistinct, rankIdeas, scoreIdea, type Idea } from '@/lib/recommend';
-import { businessHeadline, businessLines, estimateYear, fitLines, type Estimate, type Line } from '@/lib/decision';
+import { businessHeadline, businessLines, cautionsFrom, decideCall, estimateYear, fitLines, type Call, type Estimate, type Line } from '@/lib/decision';
+import { computeStrategy } from '@/lib/server/strategy';
 import { aboutHe, hebrewName, UNIVERSE, type UniverseEntry } from '@/lib/universe';
-import { groupOf } from '@/lib/momentum';
+import { bucketOf, groupOf, KEEP_TOP } from '@/lib/momentum';
 import { price as fmtPrice } from '@/lib/format';
 import type { Series } from '@/lib/forecast';
 import type { Currency } from '@/lib/portfolio';
@@ -18,6 +19,7 @@ export type IdeaRow = Idea & {
     entry: UniverseEntry; about: string | null; price: number | null; currency: Currency;
     estimate: Estimate; business: YahooBusiness | null; businessHeadline: Line | null; fit: Line[];
     analystTarget: number | null; nextEarnings: string | null; trailingPE: number | null; dividendPct: number | null;
+    call: Call; callText: string; rank: number | null; momentumPct: number | null; cautions: string[]; held: boolean;
 };
 
 export type IdeasResult = {
@@ -71,7 +73,12 @@ async function compute(userId: string): Promise<Cached> {
     const base = baseline(ctx);
 
     const heldSet = new Set(open.map((h) => h.symbol));
-    const candidates = UNIVERSE.filter((u) => !heldSet.has(u.symbol));
+    const candidates = UNIVERSE;
+    const strategy = await computeStrategy(userId).catch((e) => { console.error('Ideas: strategy failed', e); return null; });
+    const rankOf = new Map((strategy?.ranking ?? []).map((r) => [r.symbol, r]));
+    const buySet = new Set((strategy?.buys ?? []).map((b) => b.symbol));
+    const skipOf = new Map((strategy?.heldSectorSkips ?? []).map((s) => [s.symbol, s.because]));
+    const bucketStats = new Map((strategy?.buckets ?? []).map((b) => [b.bucket, b]));
     const series = new Map<string, Series>();
     const rows = await mapLimit(candidates, 6, async (entry): Promise<IdeaRow | null> => {
         const [history, f] = await Promise.all([getYahooHistory(entry.symbol, '5y'), getYahooFundamentals(entry.symbol).catch(() => null)]);
@@ -80,12 +87,20 @@ async function compute(userId: string): Promise<Cached> {
         const s = window(history);
         series.set(entry.symbol, s);
         const idea = scoreIdea(ctx, base, s, price, f);
-        const estimate = estimateYear({ price, targetMean: f?.targetMeanPrice ?? null, analysts: f?.analysts ?? null, dividendPct: f?.dividendYieldPct ?? null, series: s });
+        let estimate: Estimate = estimateYear({ price, targetMean: f?.targetMeanPrice ?? null, analysts: f?.analysts ?? null, dividendPct: f?.dividendYieldPct ?? null, series: s });
+        const ranked = rankOf.get(entry.symbol);
+        const isHeld = heldSet.has(entry.symbol);
+        const decided = decideCall({ kind: entry.kind, rank: ranked?.rank ?? null, total: strategy?.ranking.length ?? 0, momentumPct: ranked?.momentumPct ?? null, isBuy: buySet.has(entry.symbol), held: isHeld, skipBecause: skipOf.get(entry.symbol) || undefined, keepTop: KEEP_TOP });
+        // For a ranked stock, "how much might it make" is what stocks at the same place in the ranking did the year after
+        const bs = ranked ? bucketStats.get(bucketOf(ranked.rank)) : undefined;
+        if (bs) estimate = { ...estimate, systemPct: bs.medianPct, rangeLowPct: Math.round(bs.p10Pct), rangeHighPct: Math.round(bs.p90Pct), basis: 'rank', upPct: bs.upPct, rankFrom: bs.bucket };
         return {
             ...idea, entry, about: aboutHe(entry.symbol), price, currency: entry.symbol.endsWith('.TA') ? 'ILS' : 'USD',
             estimate, business: f?.business ?? null, businessHeadline: businessHeadline(f?.business ?? null),
             fit: fitLines({ correlation: idea.correlation, heldNames, drawdownBefore: idea.drawdownBefore, drawdownAfter: idea.drawdownAfter, weightPct: IDEA_WEIGHT_PCT }),
             analystTarget: f?.targetMeanPrice ?? null, nextEarnings: f?.nextEarnings ?? null, trailingPE: f?.trailingPE ?? null, dividendPct: f?.dividendYieldPct ?? null,
+            call: decided.call, callText: decided.text, rank: ranked?.rank ?? null, momentumPct: ranked?.momentumPct ?? null, cautions: cautionsFrom(idea.reasons), held: isHeld,
+            ...(isHeld ? { fit: [{ text: 'כבר בתיק שלך.', tone: 'neutral' as const }] } : {}),
         };
     });
 
@@ -112,7 +127,6 @@ export type Decision = {
     insight: Insight | null;
 };
 
-const VERDICT_HE: Record<string, string> = { buy: 'מתאימה לתיק עכשיו', wait: 'מתאימה, אבל עדיף לחכות', weak: 'תורמת מעט לתיק', same: 'אותו הימור כמו מה שכבר יש' };
 
 // Everything for one candidate's page: the numbers, the business, the news, and a plain summary.
 export async function computeDecision(userId: string, symbol: string): Promise<Decision | null> {
@@ -126,8 +140,8 @@ export async function computeDecision(userId: string, symbol: string): Promise<D
     const insight = await getInsight({
         symbol: idea.symbol, name: idea.entry.he, about: idea.about, sector: idea.entry.sector,
         price: idea.price ? fmtPrice(idea.price, idea.currency) : null,
-        systemEstimate: `הערכה לשנה: ${idea.estimate.systemPct}% (${idea.estimate.analysts} אנליסטים; ${VERDICT_HE[idea.verdict]})`,
-        business: lines.map((l) => l.text), reasonsFromSystem: idea.reasons, headlines,
+        systemEstimate: `ההחלטה של המערכת: ${idea.callText} בעבר, מניות במקום כזה בדירוג עשו בשנה שאחרי ${idea.estimate.systemPct}% באמצע.`,
+        business: lines.map((l) => l.text), reasonsFromSystem: [], headlines,
     });
     return { idea, result, businessLines: lines, headlines, insight };
 }

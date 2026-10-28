@@ -3,7 +3,8 @@
 
 import { getUsdIls, getYahooMonthly, getYahooQuote } from '@/lib/actions/yahoo.actions';
 import { loadPortfolio } from '@/lib/server/portfolio-data';
-import { backtest, KEEP_TOP, pickBuys, rankAt, TOP_BUY, toTable, type BacktestPoint, type BacktestStats, type Monthly, type Ranked } from '@/lib/momentum';
+import { backtest, forwardByBucket, KEEP_TOP, pickBuys, rankAt, TOP_BUY, toTable, type BacktestPoint, type BacktestStats, type BucketStats, type Monthly, type Ranked } from '@/lib/momentum';
+import { groupOf } from '@/lib/momentum';
 import { CAPITAL_GAINS_TAX, harvestIdeas, realisedByYear, taxIfSold, type Harvest } from '@/lib/tax';
 import { hebrewName, UNIVERSE } from '@/lib/universe';
 import type { Currency } from '@/lib/portfolio';
@@ -11,7 +12,7 @@ import type { Currency } from '@/lib/portfolio';
 const INDEX = '^TA125.TA';
 const STOCKS = UNIVERSE.filter((u) => u.kind === 'stock').map((u) => u.symbol);
 
-type Market = { table: ReturnType<typeof toTable>; index: Monthly; at: number };
+type Market = { table: ReturnType<typeof toTable>; index: Monthly; at: number; buckets: BucketStats[] };
 let market: Market | null = null;
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -25,7 +26,8 @@ async function loadMarket(): Promise<Market> {
     if (market && Date.now() - market.at < 12 * 3600 * 1000) return market;
     const [rows, index] = await Promise.all([mapLimit(STOCKS, 6, (s) => getYahooMonthly(s)), getYahooMonthly(INDEX)]);
     const series = Object.fromEntries(STOCKS.map((s, i) => [s, rows[i]]).filter(([, r]) => (r as Monthly).length > 13));
-    market = { table: toTable(series), index, at: Date.now() };
+    const table = toTable(series);
+    market = { table, index, at: Date.now(), buckets: forwardByBucket(table) };
     return market;
 }
 
@@ -45,6 +47,8 @@ export type StrategyResult = {
     realisedThisYear: number;
     harvest: Harvest[];
     taxRatePct: number;
+    buckets: BucketStats[];
+    heldSectorSkips: { symbol: string; name: string; rank: number; because: string }[];
 };
 
 const cache = new Map<string, { at: number; key: string; value: StrategyResult }>();
@@ -58,7 +62,8 @@ export async function computeStrategy(userId: string): Promise<StrategyResult> {
     const { table, index } = m;
     const last = table.months.length - 1;
     const ranked = rankAt(table, last, STOCKS);
-    const buys = pickBuys(ranked);
+    const heldNow = portfolio.holdings.filter((h) => h.quantity > 0).map((h) => h.symbol);
+    const buys = pickBuys(ranked, TOP_BUY, undefined, heldNow);
     const buySet = new Set(buys.map((b) => b.symbol));
     const heldSet = new Set(portfolio.holdings.filter((h) => h.quantity > 0).map((h) => h.symbol));
     const rankOf = new Map(ranked.map((r) => [r.symbol, r]));
@@ -94,6 +99,12 @@ export async function computeStrategy(userId: string): Promise<StrategyResult> {
         holdings, backtests: runs.filter((r): r is NonNullable<typeof r> => r !== null).map((r) => r.stats),
         curve: runs[0]?.points ?? [], realisedThisYear: realised, harvest: harvestIdeas(portfolio.holdings, realised),
         taxRatePct: CAPITAL_GAINS_TAX * 100,
+        buckets: m.buckets,
+        heldSectorSkips: ranked.filter((r) => r.rank <= (buys.at(-1)?.rank ?? 0) && !buySet.has(r.symbol)).map((r) => {
+            const sameHeld = heldNow.find((h) => groupOf(h) === groupOf(r.symbol));
+            const sameBuy = buys.find((b) => groupOf(b.symbol) === groupOf(r.symbol));
+            return { symbol: r.symbol, name: hebrewName(r.symbol), rank: r.rank, because: sameHeld ? `כבר יש לך את ${hebrewName(sameHeld)} מאותו ענף` : sameBuy ? `${hebrewName(sameBuy.symbol)} מאותו ענף במקום גבוה יותר` : '' };
+        }),
     };
     cache.set(userId, { at: Date.now(), key, value });
     return value;

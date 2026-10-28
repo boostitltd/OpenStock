@@ -17,6 +17,9 @@ export type Estimate = {
     systemPct: number;                 // the system's yearly estimate
     rangeLowPct: number | null;        // a bad year (1 in 10)
     rangeHighPct: number | null;       // a good year (1 in 10)
+    basis?: 'rank' | 'analysts';       // rank: what stocks at this place in the ranking did the following year
+    upPct?: number;                    // rank basis: how often they ended the year higher
+    rankFrom?: string;                 // rank basis: '1-5' | '6-15' | '16+'
 };
 
 // Analyst targets lean optimistic and one analyst is one opinion, so the estimate starts at the market average and
@@ -118,6 +121,46 @@ export function fitLines(input: { correlation: number | null; heldNames: string[
         const b = Math.abs(input.drawdownBefore), a = Math.abs(input.drawdownAfter);
         if (b - a >= 1) out.push({ text: `אם ${input.weightPct}% מהתיק היו בה בשלוש השנים האחרונות, הירידה הכי גדולה של התיק הייתה ${a.toFixed(0)}% במקום ${b.toFixed(0)}%.`, tone: 'good' });
         else if (a - b >= 1) out.push({ text: `אם ${input.weightPct}% מהתיק היו בה בשלוש השנים האחרונות, הירידה הכי גדולה של התיק הייתה ${a.toFixed(0)}% במקום ${b.toFixed(0)}%.`, tone: 'bad' });
+    }
+    return out;
+}
+
+// ---- One answer per stock, the same everywhere ----------------------------------------------------------------
+// The backtested method decides. Everything else on the page (analysts, valuation, a falling price, how it fits the
+// portfolio) is shown as information, never as a second verdict: the falling-price and far-from-the-high rules
+// were backtested and made the method worse, and valuation history isn't available to test.
+
+export type Call = 'buy' | 'hold' | 'good' | 'no' | 'base';
+
+export const CALL_LABEL: Record<Call, string> = {
+    buy: 'לקנות החודש',
+    hold: 'להמשיך להחזיק',
+    good: 'טובה, לא החודש',
+    no: 'לא לפי השיטה',
+    base: 'בסיס לתיק',
+};
+
+export function decideCall(input: {
+    kind: 'index' | 'stock'; rank: number | null; total: number; momentumPct: number | null;
+    isBuy: boolean; held: boolean; skipBecause?: string; keepTop: number;
+}): { call: Call; text: string } {
+    if (input.kind === 'index') return { call: 'base', text: 'קרן על מדד רחב: לא חלק מהדירוג. מתאימה כבסיס יציב לצד המניות.' };
+    const { rank, total, momentumPct } = input;
+    if (rank === null || momentumPct === null) return { call: 'no', text: 'אין מספיק היסטוריית מחירים כדי לדרג אותה.' };
+    const rose = `${momentumPct >= 0 ? 'עלתה' : 'ירדה'} ${Math.abs(momentumPct).toFixed(0)}% בשנה האחרונה`;
+    if (input.isBuy) return { call: 'buy', text: `במקום ${rank} מתוך ${total}: ${rose}. לפי השיטה ${input.held ? 'מוסיפים לה החודש, היא כבר בתיק שלך' : 'קונים אותה החודש'}.` };
+    if (rank <= input.keepTop && input.held) return { call: 'hold', text: `במקום ${rank} מתוך ${total}, בתוך ${input.keepTop} המובילות: ${rose}. ממשיכים להחזיק.` };
+    if (rank <= input.keepTop) return { call: 'good', text: `במקום ${rank} מתוך ${total}: ${rose}.${input.skipBecause ? ` לא קונים אותה החודש כי ${input.skipBecause}.` : ' היא בין 15 המובילות אבל לא בין החמש שקונים החודש.'}` };
+    return { call: 'no', text: `במקום ${rank} מתוך ${total}: ${rose}. מחוץ ל-${input.keepTop} המובילות, ולכן השיטה לא קונה אותה${input.held ? ' ומוכרת אותה' : ''}.` };
+}
+
+// Warnings that are worth knowing but were not allowed to override the method, each saying whether it was tested.
+export function cautionsFrom(reasons: string[]): string[] {
+    const out: string[] = [];
+    for (const r of reasons) {
+        if (r.startsWith('המחיר בירידה')) out.push(`${r.replace(': עדיף לחכות שהירידה תיעצר', '').replace('. עדיף לחכות שהירידה תיעצר', '')}. בדקנו: לחכות במצב כזה לא שיפר את השיטה בעבר.`);
+        else if (r.startsWith('יקרה')) out.push(`${r}. את זה אי אפשר לבדוק לאחור, כי אין נתוני רווח היסטוריים.`);
+        else if (r.startsWith('קופצת')) out.push(`${r}. כדאי שלא תהיה חלק גדול מהתיק.`);
     }
     return out;
 }

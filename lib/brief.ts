@@ -122,7 +122,7 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
     const prevSims = new Map((prev?.sims ?? []).map((s) => [s.years, s]));
     const valueMove = prev && prev.totalValue > 0 ? (now.totalValue / prev.totalValue - 1) * 100 : null;
     const topIndex = now.ideas.find((i) => i.kind === 'index' && i.verdict === 'buy' && !i.similarTo);
-    const topStocks = now.ideas.filter((i) => i.kind === 'stock' && i.verdict === 'buy' && !i.similarTo).slice(0, 3);
+    const topStocks = now.strategy ? [] : now.ideas.filter((i) => i.kind === 'stock' && i.verdict === 'buy' && !i.similarTo).slice(0, 3);
     const prevTop = new Set((prev?.ideas ?? []).filter((i) => i.verdict === 'buy').map((i) => i.symbol));
 
     const subjectBits = [
@@ -231,7 +231,7 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
     }
 
     // 5. Ideas
-    parts.push(h2('לגיוון התיק'));
+    parts.push(h2('בסיס לתיק: קרן על מדד רחב'));
     const ideaRow = (i: BriefIdea) => `<tr><td style="${FF}padding:10px 0;border-bottom:1px solid ${C.line};">
         <div style="font-size:15px;color:${C.text};font-weight:600;">${e(i.he)} <span style="color:${C.faint};font-size:12px;font-weight:400;">${ltr(i.symbol)}</span>${!prevTop.has(i.symbol) && prev ? ` <span style="color:${C.brand};font-size:12px;">חדש ברשימה</span>` : ''}</div>
         ${i.about ? `<div style="font-size:13.5px;color:${C.sub};line-height:1.6;">${e(i.about)}</div>` : ''}

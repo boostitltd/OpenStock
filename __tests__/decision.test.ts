@@ -64,3 +64,24 @@ describe('plain portfolio fit', () => {
         expect(le('המניות שכבר יש לך')).toBe('למניות שכבר יש לך');
     });
 });
+
+describe('one answer per stock', () => {
+    it('follows the method, and explains the rest', async () => {
+        const { decideCall } = await import('@/lib/decision');
+        const base = { kind: 'stock' as const, total: 41, keepTop: 15, held: false };
+        expect(decideCall({ ...base, rank: 1, momentumPct: 66.8, isBuy: true }).call).toBe('buy');
+        expect(decideCall({ ...base, rank: 9, momentumPct: 43, isBuy: false, held: true }).call).toBe('hold');
+        const skipped = decideCall({ ...base, rank: 4, momentumPct: 56, isBuy: false, skipBecause: 'כבר יש לך את הפניקס מאותו ענף' });
+        expect(skipped.call).toBe('good');
+        expect(skipped.text).toContain('הפניקס');
+        expect(decideCall({ ...base, rank: 22, momentumPct: 3, isBuy: false, held: true }).text).toContain('ומוכרת אותה');
+        expect(decideCall({ ...base, kind: 'index', rank: null, momentumPct: null, isBuy: false }).call).toBe('base');
+    });
+    it('turns warnings into notes that say whether they were tested', async () => {
+        const { cautionsFrom } = await import('@/lib/decision');
+        const c = cautionsFrom(['המחיר בירידה: 18% מתחת למחיר הממוצע של עשרת החודשים האחרונים. עדיף לחכות שהירידה תיעצר', 'יקרה: המחיר שווה 111 שנים של הרווח שלה היום']);
+        expect(c[0]).toContain('לא שיפר את השיטה');
+        expect(c[0]).not.toContain('עדיף לחכות');
+        expect(c[1]).toContain('אי אפשר לבדוק לאחור');
+    });
+});

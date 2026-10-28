@@ -1,19 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, CircleAlert, CircleMinus, ExternalLink, FlaskConical, Newspaper } from "lucide-react";
 import Panel from "@/components/Panel";
-import { VERDICT, toneClass } from "@/components/portfolio/IdeaCard";
+import { CALL_CLS, RANK_FROM_HE, toneClass } from "@/components/portfolio/IdeaCard";
 import { getDecision } from "@/lib/actions/ideas.actions";
-import type { Line } from "@/lib/decision";
+import { CALL_LABEL, type Line } from "@/lib/decision";
 import { bigMoney, changeWords, dateHe, price, signedPct } from "@/lib/format";
 
 export const metadata = { title: 'החלטה על מניה | OpenStock' };
-
-const VERDICT_SENTENCE = {
-    buy: 'לפי הבדיקות של המערכת, היא מתאימה לתיק שלך עכשיו.',
-    wait: 'היא יכולה להתאים לתיק, אבל עדיף לחכות.',
-    weak: 'היא לא מזיקה, אבל מוסיפה לתיק מעט.',
-    same: 'היא לא מאזנת את התיק: היא עוד מאותו דבר שכבר יש לך.',
-} as const;
 
 function LineItem({ line }: { line: Line }) {
     const Icon = line.tone === 'good' ? CheckCircle2 : line.tone === 'bad' ? CircleAlert : CircleMinus;
@@ -45,7 +38,7 @@ export default async function DecisionPage({ params }: { params: Promise<{ symbo
             <Panel title="המניה לא ברשימת המועמדות">
                 <div className="empty-state">
                     <h3>אין עמוד החלטה למניה הזו</h3>
-                    <p className="max-w-sm">עמוד ההחלטה קיים למועמדות שברשימת &quot;מה לקנות&quot;. מניה שכבר יש לך בתיק נמצאת בעמוד התחזית.</p>
+                    <p className="max-w-sm">עמוד ההחלטה קיים למניות הגדולות בתל אביב ולקרנות המדד שברשימת &quot;מה לקנות&quot;.</p>
                     <Link href="/portfolio/ideas" className="btn btn-ghost mt-2"><ArrowRight /> חזרה לרשימה</Link>
                 </div>
             </Panel>
@@ -54,7 +47,6 @@ export default async function DecisionPage({ params }: { params: Promise<{ symbo
 
     const { idea, insight, headlines, businessLines, result } = d;
     const e = idea.estimate;
-    const v = VERDICT[idea.verdict];
     const b = idea.business;
     const cur = b?.currency ?? 'ILS';
 
@@ -64,7 +56,7 @@ export default async function DecisionPage({ params }: { params: Promise<{ symbo
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2.5">
                         <h1 className="page-title">{idea.entry.he}</h1>
-                        <span className={`pill ${v.cls}`}>{v.label}</span>
+                        <span className={`pill ${CALL_CLS[idea.call]}`}>{CALL_LABEL[idea.call]}</span>
                     </div>
                     <p className="page-sub"><span dir="ltr" className="mono">{idea.symbol}</span> · {idea.entry.sector}{idea.price != null ? ` · מחיר ${price(idea.price, idea.currency)}` : ''}</p>
                     {idea.about && <p className="mt-2 max-w-3xl text-[14.5px] leading-relaxed text-muted-foreground">{idea.about}</p>}
@@ -78,22 +70,26 @@ export default async function DecisionPage({ params }: { params: Promise<{ symbo
             <div className="flex flex-col gap-3">
                 <Panel title="השורה התחתונה">
                     <div className="flex flex-col gap-3 p-4">
-                        <p className="text-[16px] font-semibold text-foreground">{VERDICT_SENTENCE[idea.verdict]}</p>
+                        <p className="text-[16px] font-semibold text-foreground">{idea.callText}</p>
                         {insight?.story && <p className="max-w-4xl text-[14.5px] leading-relaxed text-muted-foreground">{insight.story}</p>}
-                        <ul className="flex flex-col gap-1.5">
-                            {idea.reasons.slice(0, 4).map((r) => <li key={r} className="text-[14px] leading-snug text-foreground">• {r}</li>)}
-                        </ul>
+                        {idea.cautions.length > 0 && (
+                            <div className="flex flex-col gap-1 rounded-[10px] bg-brand-soft/30 px-3 py-2">
+                                <p className="kicker flex items-center gap-1.5 text-brand-ink"><CircleAlert className="size-3.5" /> שימו לב, בלי לשנות את ההחלטה</p>
+                                {idea.cautions.map((c) => <p key={c} className="text-[13.5px] leading-snug text-muted-foreground">{c}</p>)}
+                            </div>
+                        )}
+                        {idea.call !== 'base' && <Link href="/portfolio/strategy" className="text-[13px] text-brand-ink hover:underline">למה ההחלטה הזו: השיטה והבדיקה שלה על 20 שנה</Link>}
                     </div>
                 </Panel>
 
-                <Panel title="כמה אפשר להרוויח" sub="לשנה הקרובה, כולל דיבידנד">
+                <Panel title="כמה אפשר להרוויח" sub={e.basis === 'rank' ? `ב-12 החודשים הבאים, לפי מה שקרה בעבר למניות ${RANK_FROM_HE[e.rankFrom ?? '16+']} בדירוג` : 'לשנה הקרובה, כולל דיבידנד'}>
                     <div className="grid gap-3 p-3 md:grid-cols-3">
-                        <Tile label="הערכת המערכת" value={signedPct(e.systemPct)} tone={e.systemPct >= 0 ? 'text-up' : 'text-down'}
-                            sub={e.analysts === 0 ? 'אין אנליסטים, אז זו התשואה הממוצעת של שוק המניות.' : `${e.weightPct}% מההערכה מגיעים מהאנליסטים והשאר מהממוצע של השוק (7%).`} />
+                        <Tile label="בשנה רגילה" value={signedPct(e.systemPct)} tone={e.systemPct >= 0 ? 'text-up' : 'text-down'}
+                            sub={e.basis === 'rank' ? `האמצע: חצי מהפעמים יותר, חצי פחות. ${e.upPct}% מהפעמים המניה עלתה.` : e.analysts === 0 ? 'אין אנליסטים, אז זו התשואה הממוצעת של שוק המניות.' : `${e.weightPct}% מההערכה מגיעים מהאנליסטים והשאר מהממוצע של השוק (7%).`} />
                         <Tile label="בשנה רעה (1 מכל 10)" value={e.rangeLowPct === null ? '—' : signedPct(e.rangeLowPct)} tone="text-down"
-                            sub="גם כשהכול הולך לפי ההערכה, כך נראית שנה רעה לפי איך שהמניה זזה בשלוש השנים האחרונות." />
+                            sub={e.basis === 'rank' ? 'אחת מכל עשר פעמים, מניה במקום כזה ירדה לפחות כך.' : 'כך נראית שנה רעה לפי איך שהמניה זזה בשלוש השנים האחרונות.'} />
                         <Tile label="בשנה טובה (1 מכל 10)" value={e.rangeHighPct === null ? '—' : signedPct(e.rangeHighPct)} tone="text-up"
-                            sub="ובאותו אופן, שנה טובה." />
+                            sub={e.basis === 'rank' ? 'ואחת מכל עשר פעמים עלתה לפחות כך.' : 'ובאותו אופן, שנה טובה.'} />
                     </div>
                     <div className="flex flex-col gap-1.5 px-4 pb-4 text-[13.5px] text-muted-foreground">
                         {e.analysts > 0 && e.analystUpsidePct !== null && idea.analystTarget !== null && (

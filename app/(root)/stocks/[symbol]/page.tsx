@@ -5,6 +5,7 @@ import StockHeader, { StockHeaderSkeleton } from "@/components/stocks/StockHeade
 import StockSentimentCard from "@/components/stocks/StockSentimentCard";
 import StockChart from "@/components/stocks/StockChart";
 import Panel from "@/components/Panel";
+import SystemCall from "@/components/stocks/SystemCall";
 import {
     TECHNICAL_ANALYSIS_WIDGET_CONFIG,
     COMPANY_PROFILE_WIDGET_CONFIG,
@@ -78,19 +79,26 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
                 </div>
 
                 <div className="flex min-w-0 flex-col gap-3">
-                    <Panel title="ניתוח טכני" sub="מתנדים וממוצעים נעים, שעתי">
-                        <TradingViewWidget
-                            scriptUrl={`${scriptUrl}technical-analysis.js`}
-                            config={TECHNICAL_ANALYSIS_WIDGET_CONFIG(tvSymbol)}
-                            height={400}
-                        />
-                    </Panel>
+                    <Suspense fallback={null}>
+                        <SystemCall symbol={symbol} />
+                    </Suspense>
                     <Suspense fallback={null}>
                         <DividendYield symbol={symbol} />
                     </Suspense>
                     <Suspense fallback={null}>
                         <Sentiment symbol={symbol} />
                     </Suspense>
+                    <details className="hatch">
+                        <summary className="cursor-pointer px-4 py-3 text-[13.5px] font-semibold text-muted-foreground">ניתוח טכני של TradingView (לפי שעה, לא חלק מהשיטה)</summary>
+                        <p className="px-4 pb-2 text-[12.5px] text-faint">המד הזה מסתכל על התנועה בשעות האחרונות, ולכן הוא משתנה כל הזמן ויכול להגיד &quot;מכירה&quot; על מניה שהשיטה קונה. למשקיע שקונה פעם בחודש הוא לא רלוונטי.</p>
+                        <div className="card">
+                            <TradingViewWidget
+                                scriptUrl={`${scriptUrl}technical-analysis.js`}
+                                config={TECHNICAL_ANALYSIS_WIDGET_CONFIG(tvSymbol)}
+                                height={400}
+                            />
+                        </div>
+                    </details>
                     <Panel title="פרופיל" sub="במה החברה עוסקת">
                         <TradingViewWidget
                             scriptUrl={`${scriptUrl}symbol-profile.js`}

@@ -41,3 +41,10 @@ describe('backtest', () => {
         expect(irrMonthly(12 * 1000 * 1.1, 12, 1000)).toBeGreaterThan(15);
     });
 });
+
+describe('held sectors', () => {
+    it('skips a sector already held, but may add to the very stock held', () => {
+        const ranked = ['HARL.TA', 'ENLT.TA', 'PHOE.TA', 'ESLT.TA', 'TSEM.TA', 'BEZQ.TA', 'SPEN.TA'].map((symbol, i) => ({ symbol, momentumPct: 60 - i, rank: i + 1 }));
+        expect(pickBuys(ranked, 5, 1, ['PHOE.TA']).map((r) => r.symbol)).toEqual(['ENLT.TA', 'PHOE.TA', 'ESLT.TA', 'TSEM.TA', 'BEZQ.TA']);
+    });
+});

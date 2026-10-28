@@ -33,7 +33,7 @@ export async function buildBriefNow(userId: string): Promise<BriefNow> {
             analystTarget: h.fundamentals?.targetMeanPrice ?? null, analysts: h.fundamentals?.analysts ?? null,
             targetPrice: h.targetPrice, targetDistancePct: h.targetDistancePct, targetReached: h.targetReached, nextEarnings: h.fundamentals?.nextEarnings ?? null,
         })),
-        ideas: ideas.ideas.map((i) => ({ symbol: i.symbol, he: i.entry.he, kind: i.entry.kind, verdict: i.verdict, reasons: i.reasons, similarTo: i.similarTo, volBefore: i.volBefore, volAfter: i.volAfter, about: i.about, systemPct: i.estimate.systemPct, rangeLowPct: i.estimate.rangeLowPct, rangeHighPct: i.estimate.rangeHighPct, business: i.businessHeadline?.text ?? null })),
+        ideas: ideas.ideas.map((i) => ({ symbol: i.symbol, he: i.entry.he, kind: i.entry.kind, verdict: i.call === 'base' ? 'buy' : i.call, reasons: i.reasons, similarTo: i.similarTo, volBefore: i.volBefore, volAfter: i.volAfter, about: i.about, systemPct: i.estimate.systemPct, rangeLowPct: i.estimate.rangeLowPct, rangeHighPct: i.estimate.rangeHighPct, business: i.businessHeadline?.text ?? null })),
         plan: {
             hasTargets,
             buys: (plan?.rows ?? []).filter((r) => r.action === 'BUY').map((r) => ({ symbol: r.symbol, shares: r.shares, amountBase: r.amountBase, currency: r.currency, price: r.price })),

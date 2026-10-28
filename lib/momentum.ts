@@ -24,12 +24,17 @@ export const GROUP: Record<string, string> = {
 };
 export const groupOf = (symbol: string) => GROUP[symbol.toUpperCase().replace(/\.TA$/, '')] ?? symbol;
 
-// This month's buys: walk down the ranking, at most SECTOR_CAP per group, until TOP_BUY are chosen.
-export function pickBuys(ranked: Ranked[], n = TOP_BUY, cap = SECTOR_CAP): Ranked[] {
+// This month's buys: walk down the ranking, at most SECTOR_CAP per group, until TOP_BUY are chosen. A sector the
+// portfolio already holds is skipped (adding to the very stock already held is fine): backtested, it earned the same
+// 17.4% a year while holding fewer stocks from one sector, and it is what "same bet" warns about.
+export function pickBuys(ranked: Ranked[], n = TOP_BUY, cap = SECTOR_CAP, held: Iterable<string> = []): Ranked[] {
+    const heldSet = new Set([...held].map((s) => s.toUpperCase()));
+    const heldGroups = new Set([...heldSet].map(groupOf));
     const out: Ranked[] = [], count = new Map<string, number>();
     for (const r of ranked) {
         const g = groupOf(r.symbol);
         if ((count.get(g) ?? 0) >= cap) continue;
+        if (heldGroups.has(g) && !heldSet.has(r.symbol.toUpperCase())) continue;
         out.push(r); count.set(g, (count.get(g) ?? 0) + 1);
         if (out.length === n) break;
     }
@@ -136,7 +141,6 @@ export function backtest(t: Table, indexSeries: Monthly, from: string, to: strin
         const ranked = rankAt(t, i, symbols);
         if (ranked.length < KEEP_TOP) continue;
         lastI = i;
-        const buy = pickBuys(ranked).map((r) => r.symbol);
         const keep = new Set(ranked.slice(0, KEEP_TOP).map((r) => r.symbol));
         for (const acc of accounts) {
             let cash = monthly;
@@ -144,6 +148,7 @@ export function backtest(t: Table, indexSeries: Monthly, from: string, to: strin
                 const p = price(t, s, i);
                 if (p !== null && !keep.has(s)) cash += sell(acc, s, p);
             }
+            const buy = pickBuys(ranked, TOP_BUY, SECTOR_CAP, acc.lots.keys()).map((r) => r.symbol);
             for (const s of buy) {
                 const amt = cash / buy.length, p = price(t, s, i)!;
                 const l = acc.lots.get(s) ?? { units: 0, cost: 0 };
@@ -179,4 +184,26 @@ export function backtest(t: Table, indexSeries: Monthly, from: string, to: strin
             equalPct: irrMonthly(end.equal, n, monthly), indexPct: irrMonthly(end.index, n, monthly),
         },
     };
+}
+
+export type Bucket = '1-5' | '6-15' | '16+';
+export const bucketOf = (rank: number): Bucket => (rank <= TOP_BUY ? '1-5' : rank <= KEEP_TOP ? '6-15' : '16+');
+export type BucketStats = { bucket: Bucket; n: number; medianPct: number; meanPct: number; p10Pct: number; p90Pct: number; upPct: number };
+
+// What stocks at each place in the ranking did over the following 12 months, every month since `from`. This is the
+// honest "how much might it make": the typical year and the spread, measured, not predicted.
+export function forwardByBucket(t: Table, from = '2006-01'): BucketStats[] {
+    const xs: Record<Bucket, number[]> = { '1-5': [], '6-15': [], '16+': [] };
+    for (let i = 0; i + 12 < t.months.length; i++) {
+        if (t.months[i] < from) continue;
+        for (const r of rankAt(t, i)) {
+            const a = price(t, r.symbol, i), b = price(t, r.symbol, i + 12);
+            if (a && b) xs[bucketOf(r.rank)].push(b / a - 1);
+        }
+    }
+    return (Object.keys(xs) as Bucket[]).filter((k) => xs[k].length > 20).map((k) => {
+        const v = xs[k].slice().sort((p, q) => p - q), n = v.length;
+        const pct = (x: number) => Math.round(x * 1000) / 10;
+        return { bucket: k, n, medianPct: pct(v[Math.floor(n / 2)]), meanPct: pct(v.reduce((s, x) => s + x, 0) / n), p10Pct: pct(v[Math.floor(n / 10)]), p90Pct: pct(v[Math.floor((9 * n) / 10)]), upPct: Math.round((v.filter((x) => x > 0).length / n) * 100) };
+    });
 }
