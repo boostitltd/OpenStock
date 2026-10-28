@@ -289,7 +289,7 @@ export async function computeRadar(userId: string, candidates: string[] = []): P
             const items: RadarItem[] = (r.items ?? []).filter((x) => sources[x.ref]).map((x) => {
                 const s = sources[x.ref];
                 return { title: s.source === 'trump' ? (s.text.slice(0, 220) + (s.text.length > 220 ? '…' : '')) : s.title, date: s.date, link: s.link, source: s.source, affects: cleanList(x.affects, 6).filter((a) => allowed.has(a)), direction: x.direction, explanation: x.explanation.trim(), importance: x.importance };
-            }).filter((x) => x.affects.length > 0 && (x.direction !== 'unclear' || x.importance === 'high')).slice(0, 6).sort((a, b) => (a.importance === b.importance ? b.date.localeCompare(a.date) : a.importance === 'high' ? -1 : 1));
+            }).filter((x) => x.affects.length > 0 && x.direction !== 'unclear').slice(0, 6).sort((a, b) => (a.importance === b.importance ? b.date.localeCompare(a.date) : a.importance === 'high' ? -1 : 1));
             return { ...base, items };
         }),
         Promise.all(watch.filter((s) => s.endsWith('.TA')).map(insiderNews)).then((x) => x.flat().sort((a, b) => b.date.localeCompare(a.date))),

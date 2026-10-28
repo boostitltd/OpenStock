@@ -81,7 +81,6 @@ export function holdingEvents(now: BriefNow, prev: BriefPrev): BriefEvent[] {
     }
     for (const t of now.thesis ?? []) {
         if (t.status === 'broken') out.push({ symbol: t.name, kind: 'thesis', urgent: true, text: `הסיבה שבגללה קנית את ${t.name} נשברה: ${t.headline}` });
-        else if (t.status === 'weakened') out.push({ symbol: t.name, kind: 'thesis', urgent: false, text: `הסיבה שבגללה קנית את ${t.name} נחלשה: ${t.headline}` });
     }
     return out.sort((a, b) => Number(b.urgent) - Number(a.urgent));
 }
