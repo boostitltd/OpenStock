@@ -13,8 +13,6 @@ const CURRENCIES: Currency[] = ['ILS', 'USD'];
 const MAX_TRADES = 2000;
 const MAX_TARGETS = 60;
 
-export type { TradeRow, PortfolioSettingsRow } from '@/lib/server/portfolio-data';
-
 const asNumber = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? NaN : Number(v));
 
 // ---- Trades --------------------------------------------------------------------------------
@@ -150,7 +148,7 @@ export async function getBuyDayPlan(budgetOverride?: number) {
 
 // Next.js replaces a thrown server-action error with a generic message in production, so the reason a form
 // was refused ("write one sentence on why") would never reach the person. The exported actions return it.
-export type ActionResult<T = undefined> = { ok: true; value: T } | { ok: false; error: string };
+type ActionResult<T = undefined> = { ok: true; value: T } | { ok: false; error: string };
 
 const asResult = async <T,>(run: () => Promise<T>): Promise<ActionResult<T>> => {
     try {

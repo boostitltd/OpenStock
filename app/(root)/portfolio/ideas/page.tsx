@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Briefcase, CalendarCheck, FlaskConical, Lightbulb, Telescope } from "lucide-react";
 import Panel from "@/components/Panel";
 import SendBriefButton from "@/components/portfolio/SendBriefButton";
-import { getIdeas, type IdeaRow } from "@/lib/actions/ideas.actions";
+import { getIdeas } from "@/lib/actions/ideas.actions";
+import type { IdeaRow } from "@/lib/server/ideas";
 import { dateHe, pct, price } from "@/lib/format";
 import { hebrewName } from "@/lib/universe";
 

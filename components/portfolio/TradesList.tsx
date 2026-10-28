@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { deleteTrade, type TradeRow } from "@/lib/actions/portfolio.actions";
+import { deleteTrade } from "@/lib/actions/portfolio.actions";
+import type { TradeRow } from "@/lib/server/portfolio-data";
 import { formatPrice } from "@/lib/utils";
 
 export default function TradesList({ trades }: { trades: TradeRow[] }) {

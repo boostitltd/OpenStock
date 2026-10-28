@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { HoldingOutlook } from "@/lib/actions/outlook.actions";
+import type { HoldingOutlook } from "@/lib/server/outlook";
 import type { Currency } from "@/lib/portfolio";
 import { dateHe, money, pct } from "@/lib/format";
 import { formatPrice } from "@/lib/utils";

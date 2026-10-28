@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FlaskConical } from "lucide-react";
 import SymbolPicker from "@/components/portfolio/SymbolPicker";
-import type { WhatIf } from "@/lib/actions/outlook.actions";
+import type { WhatIf } from "@/lib/server/outlook";
 import type { Currency } from "@/lib/portfolio";
 import { money, pct } from "@/lib/format";
 import { formatPrice } from "@/lib/utils";
