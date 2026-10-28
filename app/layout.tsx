@@ -11,14 +11,14 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
-// Neither Latin font has the shekel sign, so prices showed an empty box. This face is Rubik's Hebrew subset
-// limited to ₪ by unicode-range: it sits first in every font stack and draws that one character, nothing else.
-const shekel = localFont({
+// Hebrew letters and the shekel sign come from Rubik's Hebrew subset; its unicode-range leaves every Latin
+// letter and digit to Jakarta / Plex, so numbers keep the same shapes everywhere.
+const hebrew = localFont({
   src: "./fonts/rubik-hebrew.woff2",
   variable: "--font-hebrew",
   weight: "300 900",
   display: "swap",
-  declarations: [{ prop: "unicode-range", value: "U+20AA" }],
+  declarations: [{ prop: "unicode-range", value: "U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F" }],
   adjustFontFallback: false,
   fallback: [],
 });
@@ -31,7 +31,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "OpenStock",
-  description: "OpenStock is an open-source alternative to expensive market platforms. Track real-time prices, set personalized alerts, and explore detailed company insights — built openly, for everyone, forever free.",
+  description: "מניות בתל אביב ובוול סטריט, התיק שלך, תחזיות ומה לקנות.",
 };
 
 export default function RootLayout({
@@ -40,14 +40,15 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" className="dark">
+        <html lang="he" dir="rtl" className="dark">
             <body
-                className={`${shekel.variable} ${jakarta.variable} ${plexMono.variable} font-sans antialiased`}
+                className={`${hebrew.variable} ${jakarta.variable} ${plexMono.variable} font-sans antialiased`}
             >
                 {children}
-                <Toaster/>
+                <Toaster dir="rtl" position="bottom-left" />
                 <OntoLaunchCard />
-                <Analytics />
+                {/* Vercel's analytics script only exists on Vercel; elsewhere (Cloud Run) it is a 404 and a console error */}
+                {process.env.VERCEL ? <Analytics /> : null}
             </body>
         </html>
     );

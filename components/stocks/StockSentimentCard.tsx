@@ -11,11 +11,24 @@ function formatScore(value: number | null, suffix: string): string {
 }
 
 function formatCompactNumber(value: number): string {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('he-IL', {
         notation: 'compact',
         maximumFractionDigits: 1,
     }).format(value);
 }
+
+const ALIGNMENT_HE: Record<string, string> = {
+    'Bullish alignment': 'כולם שוריים',
+    'Bearish alignment': 'כולם דוביים',
+    'Wide divergence': 'פער גדול',
+    Mixed: 'מעורב',
+    'Tight alignment': 'הסכמה רחבה',
+    'No sentiment mix': 'אין מספיק נתונים',
+};
+
+const METRIC_HE: Record<string, string> = { Mentions: 'אזכורים', Trades: 'עסקאות' };
+
+const TREND_HE: Record<string, string> = { rising: 'עולה', falling: 'יורדת', stable: 'יציבה' };
 
 const TREND_CLASS: Record<string, string> = {
     rising: 'is-up',
@@ -36,9 +49,9 @@ export default function StockSentimentCard({ insight }: StockSentimentCardProps)
     }
 
     const summary = [
-        { label: 'Avg. buzz', value: formatScore(insight.averageBuzz, '/100') },
-        { label: 'Bullish avg', value: formatScore(insight.bullishAverage, '%') },
-        { label: 'Coverage', value: `${insight.availableSources}/4 sources` },
+        { label: 'באזז ממוצע', value: formatScore(insight.averageBuzz, '/100') },
+        { label: 'שוריים בממוצע', value: formatScore(insight.bullishAverage, '%') },
+        { label: 'כיסוי', value: `${insight.availableSources} מתוך 4 מקורות` },
     ];
 
     return (
@@ -52,24 +65,24 @@ export default function StockSentimentCard({ insight }: StockSentimentCardProps)
                 ))}
             </div>
             <p className="border-t border-line px-3 py-2.5 text-[12.5px] text-faint">
-                Source alignment: <span className={cn('font-semibold', getAlignmentClass(insight.sourceAlignment))}>{insight.sourceAlignment}</span>
+                הסכמה בין המקורות: <span className={cn('font-semibold', getAlignmentClass(insight.sourceAlignment))}>{ALIGNMENT_HE[insight.sourceAlignment] ?? insight.sourceAlignment}</span>
             </p>
 
             <ul className="row-list border-t border-line">
                 {insight.sources.map((source) => (
                     <li key={source.source} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-2.5">
                         <div className="min-w-0">
-                            <p className="truncate font-semibold text-foreground">{source.label}</p>
+                            <p className="truncate font-semibold text-foreground">{source.label === 'News' ? 'חדשות' : source.label}</p>
                             <p className="num truncate text-[12px] text-faint">
-                                {formatCompactNumber(source.metricValue)} {source.metricLabel.toLowerCase()}
+                                {formatCompactNumber(source.metricValue)} {METRIC_HE[source.metricLabel] ?? source.metricLabel.toLowerCase()}
                             </p>
                         </div>
-                        <div className="num text-right text-[12.5px]">
+                        <div className="num text-end text-[12.5px]">
                             <p className="font-semibold text-foreground">{formatScore(source.buzzScore, '')}</p>
-                            <p className="text-faint">buzz</p>
+                            <p className="text-faint">באזז</p>
                         </div>
                         <span className={cn('pill w-[74px] justify-center capitalize', TREND_CLASS[source.trend ?? ''])}>
-                            {source.bullishPct !== null ? `${source.bullishPct.toFixed(0)}% bull` : (source.trend ?? 'No trend')}
+                            {source.bullishPct !== null ? `${source.bullishPct.toFixed(0)}% שוריים` : (TREND_HE[source.trend ?? ''] ?? 'אין מגמה')}
                         </span>
                     </li>
                 ))}

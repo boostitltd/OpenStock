@@ -12,24 +12,24 @@ export const GOOD_FIRST_ISSUES_URL = `${REPO_URL}/issues?q=is%3Aopen+label%3A%22
 
 // Sign-up form select options
 export const INVESTMENT_GOALS = [
-    { value: 'Growth', label: 'Growth' },
-    { value: 'Income', label: 'Income' },
-    { value: 'Balanced', label: 'Balanced' },
-    { value: 'Conservative', label: 'Conservative' },
+    { value: 'Growth', label: 'צמיחה' },
+    { value: 'Income', label: 'הכנסה שוטפת' },
+    { value: 'Balanced', label: 'מאוזן' },
+    { value: 'Conservative', label: 'סולידי' },
 ];
 
 export const RISK_TOLERANCE_OPTIONS = [
-    { value: 'Low', label: 'Low' },
-    { value: 'Medium', label: 'Medium' },
-    { value: 'High', label: 'High' },
+    { value: 'Low', label: 'נמוכה' },
+    { value: 'Medium', label: 'בינונית' },
+    { value: 'High', label: 'גבוהה' },
 ];
 
 export const PREFERRED_INDUSTRIES = [
-    { value: 'Technology', label: 'Technology' },
-    { value: 'Healthcare', label: 'Healthcare' },
-    { value: 'Finance', label: 'Finance' },
-    { value: 'Energy', label: 'Energy' },
-    { value: 'Consumer Goods', label: 'Consumer Goods' },
+    { value: 'Technology', label: 'טכנולוגיה' },
+    { value: 'Healthcare', label: 'בריאות' },
+    { value: 'Finance', label: 'פיננסים' },
+    { value: 'Energy', label: 'אנרגיה' },
+    { value: 'Consumer Goods', label: 'מוצרי צריכה' },
 ];
 
 export const ALERT_TYPE_OPTIONS = [
@@ -48,7 +48,7 @@ type SymbolGroup = { title: string; symbols: [symbol: string, name: string][] };
 export const marketOverviewConfig = (groups: SymbolGroup[]) => ({
     colorTheme: 'dark',
     dateRange: '12M',
-    locale: 'en',
+    locale: 'he_IL',
     largeChartUrl: '',
     isTransparent: true,
     showFloatingTooltip: true,
@@ -68,7 +68,7 @@ export const marketOverviewConfig = (groups: SymbolGroup[]) => ({
 });
 
 export const marketQuotesConfig = (groups: SymbolGroup[]) => ({
-    locale: 'en',
+    locale: 'he_IL',
     showSymbolLogo: true,
     colorTheme: 'dark',
     isTransparent: true,
@@ -81,7 +81,7 @@ export const STOCK_HEATMAP_CONFIG = {
     blockColor: 'change',
     grouping: 'sector',
     isTransparent: true,
-    locale: 'en',
+    locale: 'he_IL',
     symbolUrl: '',
     colorTheme: 'dark',
     exchanges: [],
@@ -96,7 +96,7 @@ export const CRYPTO_HEATMAP_CONFIG = {
     dataSource: 'Crypto',
     blockSize: 'market_cap_calc',
     blockColor: 'change',
-    locale: 'en',
+    locale: 'he_IL',
     symbolUrl: '',
     colorTheme: 'dark',
     hasTopBar: false,
@@ -112,7 +112,7 @@ export const timelineConfig = (market: 'stock' | 'crypto' | 'forex') => ({
     feedMode: 'market',
     colorTheme: 'dark',
     isTransparent: true,
-    locale: 'en',
+    locale: 'he_IL',
     market,
 });
 
@@ -120,7 +120,7 @@ export const symbolInfoConfig = (symbol: string) => ({
     symbol,
     colorTheme: 'dark',
     isTransparent: true,
-    locale: 'en',
+    locale: 'he_IL',
     width: '100%',
 });
 
@@ -128,7 +128,7 @@ export const singleQuoteConfig = (symbol: string) => ({
     symbol,
     colorTheme: 'dark',
     isTransparent: true,
-    locale: 'en',
+    locale: 'he_IL',
 });
 
 export const CANDLE_CHART_WIDGET_CONFIG = (symbol: string) => ({
@@ -141,7 +141,7 @@ export const CANDLE_CHART_WIDGET_CONFIG = (symbol: string) => ({
     hide_volume: false,
     hotlist: false,
     interval: 'D',
-    locale: 'en',
+    locale: 'he_IL',
     save_image: false,
     style: 1,
     symbol: symbol.toUpperCase(),
@@ -161,7 +161,7 @@ export const TECHNICAL_ANALYSIS_WIDGET_CONFIG = (symbol: string) => ({
     symbol: symbol.toUpperCase(),
     colorTheme: 'dark',
     isTransparent: true,
-    locale: 'en',
+    locale: 'he_IL',
     width: '100%',
     height: 400,
     interval: '1h',
@@ -173,7 +173,7 @@ export const COMPANY_PROFILE_WIDGET_CONFIG = (symbol: string) => ({
     symbol: symbol.toUpperCase(),
     colorTheme: 'dark',
     isTransparent: true,
-    locale: 'en',
+    locale: 'he_IL',
     width: '100%',
     height: 440,
 });
@@ -182,7 +182,7 @@ export const COMPANY_FINANCIALS_WIDGET_CONFIG = (symbol: string) => ({
     symbol: symbol.toUpperCase(),
     colorTheme: 'dark',
     isTransparent: true,
-    locale: 'en',
+    locale: 'he_IL',
     width: '100%',
     height: 464,
     displayMode: 'regular',
@@ -218,17 +218,17 @@ export const WATCHLIST_TABLE_HEADER = [
 ];
 
 export const PASSWORD_RULES = [
-    { label: 'At least 8 characters', test: (pw: string) => pw.length >= 8 },
-    { label: 'At least 1 uppercase letter', test: (pw: string) => /[A-Z]/.test(pw) },
-    { label: 'At least 1 lowercase letter', test: (pw: string) => /[a-z]/.test(pw) },
-    { label: 'At least 1 number', test: (pw: string) => /[0-9]/.test(pw) },
+    { label: 'לפחות 8 תווים', test: (pw: string) => pw.length >= 8 },
+    { label: 'אות גדולה באנגלית', test: (pw: string) => /[A-Z]/.test(pw) },
+    { label: 'אות קטנה באנגלית', test: (pw: string) => /[a-z]/.test(pw) },
+    { label: 'ספרה אחת לפחות', test: (pw: string) => /[0-9]/.test(pw) },
 ] as const;
 
 export const PASSWORD_VALIDATION = {
-    required: 'Password is required',
-    minLength: { value: 8, message: 'Password must be at least 8 characters' },
+    required: 'צריך למלא סיסמה',
+    minLength: { value: 8, message: 'הסיסמה צריכה להיות באורך 8 תווים לפחות' },
     pattern: {
         value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
-        message: 'Password must include uppercase, lowercase, and a number',
+        message: 'הסיסמה צריכה לכלול אות גדולה, אות קטנה וספרה',
     },
 };

@@ -42,10 +42,10 @@ const SocialAuthButtons = () => {
                 window.location.href = result.url;
                 return;
             }
-            toast.error('Sign in failed', { description: result.error });
+            toast.error('ההתחברות נכשלה', { description: result.error });
         } catch {
             // Network failure or a stale action after a deploy
-            toast.error('Sign in failed', { description: 'Check your connection and try again.' });
+            toast.error('ההתחברות נכשלה', { description: 'בדקו את החיבור ונסו שוב.' });
         }
         setPending(null);
     }
@@ -65,7 +65,7 @@ const SocialAuthButtons = () => {
                         className="h-12 border-gray-600 text-gray-400 text-base rounded-lg cursor-pointer"
                     >
                         {icon}
-                        {pending === id ? 'Redirecting' : label}
+                        {pending === id ? 'מעבירים' : label}
                     </Button>
                 ))}
             </div>

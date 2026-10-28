@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Briefcase, Code2, Heart, Info, LayoutDashboard, LifeBuoy, LogOut, Search, Star } from "lucide-react";
+import { BookOpen, Briefcase, Code2, Heart, Info, LayoutDashboard, LifeBuoy, Lightbulb, LogOut, Search, Star } from "lucide-react";
 import { openSearch } from "@/components/SearchCommand";
 import { signOut } from "@/lib/actions/auth.actions";
 import { cn } from "@/lib/utils";
@@ -15,10 +15,10 @@ type SidebarProps = {
 };
 
 const RESOURCES = [
-    { href: '/help', label: 'Help', icon: LifeBuoy },
-    { href: '/api-docs', label: 'API docs', icon: Code2 },
-    { href: '/about', label: 'About', icon: Info },
-    { href: '/terms', label: 'Terms', icon: BookOpen },
+    { href: '/help', label: 'עזרה', icon: LifeBuoy },
+    { href: '/api-docs', label: 'תיעוד API', icon: Code2 },
+    { href: '/about', label: 'אודות', icon: Info },
+    { href: '/terms', label: 'תנאי שימוש', icon: BookOpen },
 ];
 
 const Sidebar = ({ user, watchlist }: SidebarProps) => {
@@ -34,33 +34,36 @@ const Sidebar = ({ user, watchlist }: SidebarProps) => {
 
     return (
         <aside className="sidebar">
-            <Link href="/dashboard" className="px-2 pt-1 pb-2" aria-label="OpenStock dashboard">
+            <Link href="/dashboard" className="px-2 pt-1 pb-2" aria-label="OpenStock, סקירה">
                 <Image src="/assets/images/logo.png" alt="OpenStock" width={150} height={38} priority />
             </Link>
 
             <button type="button" onClick={openSearch} className="side-cta">
                 <Search className="size-4" strokeWidth={2.5} />
-                <span className="flex-1 text-left">Search stocks</span>
+                <span className="flex-1 text-start">חיפוש מניות</span>
                 <kbd className="kbd bg-on-brand/10">⌘K</kbd>
             </button>
 
             <nav className="flex flex-col gap-0.5">
                 <Link href="/dashboard" className={cn('side-item', pathname === '/dashboard' && 'is-active')}>
-                    <LayoutDashboard /> Overview
+                    <LayoutDashboard /> סקירה
                 </Link>
                 <Link href="/watchlist" className={cn('side-item', pathname === '/watchlist' && 'is-active')}>
-                    <Star /> <span className="flex-1">Watchlist</span>
+                    <Star /> <span className="flex-1">רשימת מעקב</span>
                     <span className="num text-xs text-faint">{watchlist.length}</span>
                 </Link>
-                <Link href="/portfolio" className={cn('side-item', pathname.startsWith('/portfolio') && 'is-active')}>
-                    <Briefcase /> Portfolio
+                <Link href="/portfolio" className={cn('side-item', pathname.startsWith('/portfolio') && pathname !== '/portfolio/ideas' && 'is-active')}>
+                    <Briefcase /> התיק
+                </Link>
+                <Link href="/portfolio/ideas" className={cn('side-item', pathname === '/portfolio/ideas' && 'is-active')}>
+                    <Lightbulb /> מה לקנות
                 </Link>
             </nav>
 
             <div className="flex min-h-0 flex-col gap-1">
-                <p className="side-label shrink-0">Watching</p>
+                <p className="side-label shrink-0">במעקב</p>
                 {watchlist.length === 0 ? (
-                    <p className="px-2.5 text-[12.5px] text-faint">Star a stock to pin it here.</p>
+                    <p className="px-2.5 text-[12.5px] text-faint">סמנו מניה בכוכב כדי להצמיד אותה כאן.</p>
                 ) : (
                     <ul className="scrollbar-hide-default flex min-h-0 flex-col gap-0.5 overflow-y-auto">
                         {watchlist.map(({ symbol, company }) => (
@@ -70,7 +73,7 @@ const Sidebar = ({ user, watchlist }: SidebarProps) => {
                                     title={company}
                                     className={cn('side-item h-8 font-medium', pathname === `/stocks/${symbol}` && 'is-active')}
                                 >
-                                    <span className="mono w-14 shrink-0 text-[12.5px] font-semibold text-foreground">{symbol}</span>
+                                    <span dir="ltr" className="mono w-14 shrink-0 text-start text-[12.5px] font-semibold text-foreground">{symbol}</span>
                                     {company !== symbol && <span className="truncate text-[12.5px] text-faint">{company}</span>}
                                 </Link>
                             </li>
@@ -88,9 +91,9 @@ const Sidebar = ({ user, watchlist }: SidebarProps) => {
                 <button
                     type="button"
                     onClick={() => window.dispatchEvent(new CustomEvent('open-donate-popup'))}
-                    className="side-item h-8 text-left"
+                    className="side-item h-8 text-start"
                 >
-                    <Heart /> Support OpenStock
+                    <Heart /> לתמוך ב-OpenStock
                 </button>
             </div>
 
@@ -99,15 +102,15 @@ const Sidebar = ({ user, watchlist }: SidebarProps) => {
                     <a key={sponsor.name} href={sponsor.url} target="_blank" rel="noreferrer" title={sponsor.name} className="flex h-11 items-center gap-2.5 rounded-[11px] px-3 shadow-[inset_0_0_0_1px_var(--line)] transition-colors hover:bg-white/5">
                         {sponsor.logo && <img src={sponsor.logo} alt={sponsor.iconOnly ? '' : sponsor.name} className="h-5 w-auto max-w-[120px]" />}
                         {(!sponsor.logo || sponsor.iconOnly) && <span className="truncate text-[13px] font-semibold text-muted-foreground">{sponsor.name}</span>}
-                        <span className="kicker ml-auto">Sponsor</span>
+                        <span className="kicker ms-auto">נותן חסות</span>
                     </a>
                 ))}
                 {openSlots > 0 && (
                     <Link href="/sponsor#tiers" className="group flex flex-col gap-0.5 rounded-[11px] px-3 py-2.5 shadow-[inset_0_0_0_1px_var(--line)] transition-colors hover:bg-white/5">
                         <span className="kicker flex items-center gap-1.5 text-brand-ink">
-                            <span className="live-dot" /> {openSlots === SIDEBAR_SPONSOR_SLOTS ? 'Sponsor slots open' : `${openSlots} sponsor ${openSlots === 1 ? 'slot' : 'slots'} left`}
+                            <span className="live-dot" /> {openSlots === SIDEBAR_SPONSOR_SLOTS ? 'מקומות חסות פנויים' : openSlots === 1 ? 'נשאר מקום חסות אחד' : `נשארו ${openSlots} מקומות חסות`}
                         </span>
-                        <span className="text-[12.5px] text-faint transition-colors group-hover:text-muted-foreground">Put your company in front of every OpenStock user.</span>
+                        <span className="text-[12.5px] text-faint transition-colors group-hover:text-muted-foreground">החברה שלכם מול כל משתמשי OpenStock.</span>
                     </Link>
                 )}
             </div>
@@ -122,7 +125,7 @@ const Sidebar = ({ user, watchlist }: SidebarProps) => {
                         <span className="block truncate text-[12px] text-faint">{user.email}</span>
                     </span>
                 </Link>
-                <button type="button" onClick={handleSignOut} className="icon-btn" title="Sign out" aria-label="Sign out">
+                <button type="button" onClick={handleSignOut} className="icon-btn" title="יציאה" aria-label="יציאה">
                     <LogOut />
                 </button>
             </div>

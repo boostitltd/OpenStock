@@ -12,6 +12,7 @@ const InputField = ({name, label, placeholder, type ="text", register, error, va
             <Input
                 type={type}
                 id={name}
+                dir={type === 'email' || type === 'password' || name === 'email' ? 'ltr' : undefined}
                 placeholder={placeholder}
                 disabled={disabled}
                 value={value}

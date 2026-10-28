@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { CalendarCheck, PlusCircle, Telescope, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { CalendarCheck, Lightbulb, PlusCircle, Telescope, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import Panel from "@/components/Panel";
 import DataFreshness from "@/components/DataFreshness";
 import HoldingsTable from "@/components/portfolio/HoldingsTable";
 import TradesList from "@/components/portfolio/TradesList";
 import AddTradeModal from "@/components/portfolio/AddTradeModal";
 import { getPortfolio } from "@/lib/actions/portfolio.actions";
-import type { Currency } from "@/lib/portfolio";
+import { money } from "@/lib/format";
+import { hebrewName } from "@/lib/universe";
 
-export const metadata = { title: 'Portfolio | OpenStock' };
+export const metadata = { title: 'התיק | OpenStock' };
 
-const money = (v: number, c: Currency) => new Intl.NumberFormat('en-US', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(v);
 
 export default async function PortfolioPage() {
     const { portfolio, settings, trades, fxLive } = await getPortfolio();
@@ -20,25 +20,26 @@ export default async function PortfolioPage() {
     const hasUsd = open.some((h) => h.currency === 'USD') || base === 'USD';
 
     const tiles = [
-        { label: 'Value', value: money(portfolio.totalValue, base), sub: `${open.length} ${open.length === 1 ? 'position' : 'positions'}`, icon: Wallet },
-        { label: 'Unrealised', value: `${portfolio.totalUnrealised > 0 ? '+' : ''}${money(portfolio.totalUnrealised, base)}`, sub: portfolio.totalUnrealisedPct === null ? 'no prices yet' : `${portfolio.totalUnrealisedPct > 0 ? '+' : ''}${portfolio.totalUnrealisedPct.toFixed(1)}% on cost`, icon: portfolio.totalUnrealised >= 0 ? TrendingUp : TrendingDown, tone: portfolio.totalUnrealised >= 0 ? 'text-up' : 'text-down' },
-        { label: 'Realised', value: `${portfolio.totalRealised > 0 ? '+' : ''}${money(portfolio.totalRealised, base)}`, sub: 'closed lots, FIFO', icon: CalendarCheck },
-        { label: 'Targets reached', value: String(reached.length), sub: reached.length ? reached.map((h) => h.symbol).join(', ') : 'nothing to sell on target', icon: CalendarCheck, tone: reached.length ? 'text-brand-ink' : undefined },
+        { label: 'שווי', value: money(portfolio.totalValue, base), sub: open.length === 1 ? 'מניה אחת' : `${open.length} מניות`, icon: Wallet },
+        { label: 'רווח על הנייר', value: `${portfolio.totalUnrealised > 0 ? '+' : ''}${money(portfolio.totalUnrealised, base)}`, sub: portfolio.totalUnrealisedPct === null ? 'עוד אין מחירים' : `${portfolio.totalUnrealisedPct > 0 ? '+' : ''}${portfolio.totalUnrealisedPct.toFixed(1)}% על העלות`, icon: portfolio.totalUnrealised >= 0 ? TrendingUp : TrendingDown, tone: portfolio.totalUnrealised >= 0 ? 'text-up' : 'text-down' },
+        { label: 'רווח ממומש', value: `${portfolio.totalRealised > 0 ? '+' : ''}${money(portfolio.totalRealised, base)}`, sub: 'ממכירות, לפי FIFO', icon: CalendarCheck },
+        { label: 'הגיעו ליעד', value: String(reached.length), sub: reached.length ? reached.map((h) => hebrewName(h.symbol, h.name)).join(', ') : 'אין מה למכור לפי יעד', icon: CalendarCheck, tone: reached.length ? 'text-brand-ink' : undefined },
     ];
 
     return (
         <>
             <header className="page-head">
                 <div>
-                    <h1 className="page-title">Portfolio</h1>
+                    <h1 className="page-title">התיק</h1>
                     <p className="page-sub num flex flex-wrap items-center gap-x-2">
-                        in {base}{hasUsd ? ` · USD/ILS ${portfolio.usdIls.toFixed(3)}${fxLive ? '' : ' (fallback rate)'}` : ''} <span aria-hidden>·</span> <DataFreshness />
+                        ב{base === 'ILS' ? 'שקלים' : 'דולרים'}{hasUsd ? ` · דולר ${portfolio.usdIls.toFixed(3)} ₪${fxLive ? '' : ' (שער גיבוי)'}` : ''} <span aria-hidden>·</span> <DataFreshness />
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    <Link href="/portfolio/outlook" className="btn btn-ghost"><Telescope /> Outlook</Link>
-                    <Link href="/portfolio/buy-day" className="btn btn-ghost"><CalendarCheck /> Buy day</Link>
-                    <AddTradeModal><button type="button" className="btn btn-primary"><PlusCircle /> Record a trade</button></AddTradeModal>
+                <div className="flex flex-wrap gap-2">
+                    <Link href="/portfolio/ideas" className="btn btn-ghost"><Lightbulb /> מה לקנות</Link>
+                    <Link href="/portfolio/outlook" className="btn btn-ghost"><Telescope /> תחזית</Link>
+                    <Link href="/portfolio/buy-day" className="btn btn-ghost"><CalendarCheck /> יום קנייה</Link>
+                    <AddTradeModal><button type="button" className="btn btn-primary"><PlusCircle /> רישום עסקה</button></AddTradeModal>
                 </div>
             </header>
 
@@ -53,10 +54,10 @@ export default async function PortfolioPage() {
             </div>
 
             <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
-                <Panel title="Positions" sub={settings.targets.length ? 'Weights against your targets are on the Buy day page' : 'Set target weights on the Buy day page to plan each month'}>
+                <Panel title="המניות בתיק" sub={settings.targets.length ? 'המשקלים מול היעדים מופיעים בעמוד יום קנייה' : 'בעמוד יום קנייה קובעים משקלי יעד, כדי לתכנן כל חודש'}>
                     <HoldingsTable holdings={portfolio.holdings} base={base} />
                 </Panel>
-                <Panel title="Trades" sub={`${trades.length} recorded`} className="self-start">
+                <Panel title="עסקאות" sub={trades.length === 1 ? 'עסקה אחת' : `${trades.length} עסקאות`} className="self-start">
                     <TradesList trades={trades} />
                 </Panel>
             </div>

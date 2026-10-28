@@ -220,14 +220,14 @@ export function planBuyDay(portfolio: Portfolio, targets: Target[], budget: numb
             r.action = 'BUY';
             r.shares = shares;
             r.amountBase = round(shares * priceBase);
-            r.reason = gapSum > budget ? 'Under target; budget shared across all gaps' : 'Brings it to target';
+            r.reason = gapSum > budget ? 'מתחת ליעד. התקציב מתחלק בין כל הפערים' : 'מביאה אותה ליעד';
             spent += r.amountBase;
         } else {
-            r.reason = `Under target, but ${formatMoney(allowance, base)} buys less than one share`;
+            r.reason = `מתחת ליעד, אבל ${formatMoney(allowance, base)} קונים פחות ממניה אחת`;
         }
     }
     for (const r of rows.filter((r) => r.gapBase > 0 && (r.price === null || r.price <= 0))) {
-        r.reason = 'Under target; no price available to size the buy';
+        r.reason = 'מתחת ליעד, אבל אין מחיר כדי לחשב כמה לקנות';
     }
 
     // Sells: only when the overweight is more than the tolerance, or the symbol has no target at all
@@ -236,7 +236,7 @@ export function planBuyDay(portfolio: Portfolio, targets: Target[], budget: numb
         const h = held.get(r.symbol)!;
         const noTarget = r.targetPct === 0;
         if (!noTarget && -r.gapBase <= tolerance) {
-            r.reason = `Over target by ${round(-r.gapBase / totalAfter * 100, 1)} points; within the ${driftTolerancePct}% tolerance`;
+            r.reason = `מעל היעד ב-${round(-r.gapBase / totalAfter * 100, 1)} נקודות, בתוך הסטייה המותרת של ${driftTolerancePct}%`;
             continue;
         }
         const priceBase = h.price ? toBase(h.price, h.currency, base, usdIls) : 0;
@@ -244,7 +244,7 @@ export function planBuyDay(portfolio: Portfolio, targets: Target[], budget: numb
         r.action = 'SELL';
         r.shares = shares;
         r.amountBase = round(shares * priceBase);
-        r.reason = noTarget ? 'Not in your targets: sell, or give it a target weight' : `Over target by ${round(-r.gapBase / totalAfter * 100, 1)} points`;
+        r.reason = noTarget ? 'לא ביעדים שלך: למכור, או לקבוע לה משקל יעד' : `מעל היעד ב-${round(-r.gapBase / totalAfter * 100, 1)} נקודות`;
     }
 
     // Weights after the plan
@@ -261,5 +261,5 @@ export function planBuyDay(portfolio: Portfolio, targets: Target[], budget: numb
 const order = (a: PlanRow['action']) => (a === 'BUY' ? 0 : a === 'SELL' ? 1 : 2);
 
 export function formatMoney(amount: number, currency: Currency) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('he-IL', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 }

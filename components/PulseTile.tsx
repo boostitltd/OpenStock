@@ -22,7 +22,7 @@ export default function PulseTile({ symbol, label, initial }: { symbol: string; 
             <div className="bento-head">
                 <span className="bento-ico"><LineChart /></span>
                 <span className="truncate">{label}</span>
-                <span className="mono ml-auto text-xs text-faint">{symbol.replace('BINANCE:', '').replace(/\.TA$/, '')}</span>
+                <span dir="ltr" className="mono ms-auto text-xs text-faint">{symbol.replace('BINANCE:', '').replace(/\.TA$/, '')}</span>
             </div>
             <PriceFlash value={quote?.c} className="bento-value self-start">
                 {quote?.c ? (
@@ -33,10 +33,10 @@ export default function PulseTile({ symbol, label, initial }: { symbol: string; 
                 {quote?.c ? (
                     <>
                         <ChangePill value={quote.dp} />
-                        <span className="num truncate">{(quote.d ?? 0) > 0 ? '+' : ''}{formatAmount(quote.d ?? 0)} vs prev close</span>
+                        <span className="num truncate"><span dir="ltr">{(quote.d ?? 0) > 0 ? '+' : ''}{formatAmount(quote.d ?? 0)}</span> מול הסגירה הקודמת</span>
                     </>
                 ) : (
-                    <span>Quote unavailable</span>
+                    <span>אין שער כרגע</span>
                 )}
             </div>
         </Link>

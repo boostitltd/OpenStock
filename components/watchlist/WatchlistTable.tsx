@@ -32,12 +32,12 @@ export default function WatchlistTable({ initialRows }: { initialRows: Row[] }) 
         return (
             <div className="empty-state">
                 <span className="empty-icon"><Star className="size-5" /></span>
-                <h3>Nothing on your watchlist yet</h3>
-                <p className="max-w-sm">Search for a company and star it to track its price here and set alerts.</p>
-                <SearchButton className="btn btn-primary mt-3"><Search /> Search stocks</SearchButton>
+                <h3>רשימת המעקב עדיין ריקה</h3>
+                <p className="max-w-sm">חפשו חברה וסמנו אותה בכוכב, כדי לעקוב כאן אחרי המחיר ולהגדיר התראות.</p>
+                <SearchButton className="btn btn-primary mt-3"><Search /> חיפוש מניות</SearchButton>
                 <div className="mt-4 flex flex-wrap justify-center gap-1.5">
                     {SUGGESTIONS.map((s) => (
-                        <Link key={s} href={`/stocks/${s}`} className="pill mono h-7 px-3 hover:bg-hover hover:text-foreground">{s}</Link>
+                        <Link key={s} href={`/stocks/${s}`} dir="ltr" className="pill mono h-7 px-3 hover:bg-hover hover:text-foreground">{s}</Link>
                     ))}
                 </div>
             </div>
@@ -49,12 +49,12 @@ export default function WatchlistTable({ initialRows }: { initialRows: Row[] }) 
             <table className="data-table">
                 <thead>
                     <tr>
-                        <th>Company</th>
-                        <th className="is-num">Price</th>
-                        <th className="is-num">Today</th>
-                        <th className="is-num">Change</th>
-                        <th className="is-num">Market cap</th>
-                        <th className="w-[88px]"><span className="sr-only">Actions</span></th>
+                        <th>חברה</th>
+                        <th className="is-num">מחיר</th>
+                        <th className="is-num">היום</th>
+                        <th className="is-num">שינוי</th>
+                        <th className="is-num">שווי שוק</th>
+                        <th className="w-[88px]"><span className="sr-only">פעולות</span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -69,7 +69,7 @@ export default function WatchlistTable({ initialRows }: { initialRows: Row[] }) 
                                     )}
                                     <span className="min-w-0">
                                         <span className="block truncate font-semibold text-foreground group-hover:text-brand-ink transition-colors" title={row.name}>{row.name}</span>
-                                        <span className="mono block text-[12px] text-faint">{row.symbol}</span>
+                                        <span dir="ltr" className="mono block text-start text-[12px] text-faint">{row.symbol}</span>
                                     </span>
                                 </Link>
                             </td>
@@ -83,12 +83,12 @@ export default function WatchlistTable({ initialRows }: { initialRows: Row[] }) 
                                 <div className="flex items-center justify-end gap-1">
                                     {hasQuotes(row.symbol) ? (
                                         <CreateAlertModal symbol={row.symbol} currentPrice={row.price} currency={row.currency}>
-                                            <button type="button" className="icon-btn" title={`Set a price alert for ${row.symbol}`} aria-label={`Set a price alert for ${row.symbol}`}>
+                                            <button type="button" className="icon-btn" title={`התראת מחיר ל-${row.symbol}`} aria-label={`התראת מחיר ל-${row.symbol}`}>
                                                 <Bell />
                                             </button>
                                         </CreateAlertModal>
                                     ) : (
-                                        <span className="icon-btn opacity-40" title="Alerts are available for US stocks, Tel Aviv and crypto"><Bell /></span>
+                                        <span className="icon-btn opacity-40" title="התראות זמינות למניות בארה&quot;ב, בתל אביב ולקריפטו"><Bell /></span>
                                     )}
                                     <WatchlistButton
                                         symbol={row.symbol}

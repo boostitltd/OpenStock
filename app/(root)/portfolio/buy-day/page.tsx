@@ -4,11 +4,10 @@ import Panel from "@/components/Panel";
 import PlanTable from "@/components/portfolio/PlanTable";
 import TargetsEditor from "@/components/portfolio/TargetsEditor";
 import { getBuyDayPlan } from "@/lib/actions/portfolio.actions";
-import type { Currency } from "@/lib/portfolio";
+import { money } from "@/lib/format";
 
-export const metadata = { title: 'Buy day | OpenStock' };
+export const metadata = { title: 'יום קנייה | OpenStock' };
 
-const money = (v: number, c: Currency) => new Intl.NumberFormat('en-US', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(v);
 
 // Once a month: where does this month's money go so the portfolio lands closest to its target weights,
 // and what has drifted far enough over target to trim. The user decides; nothing here places an order.
@@ -26,39 +25,39 @@ export default async function BuyDayPage({ searchParams }: { searchParams: Promi
         <>
             <header className="page-head">
                 <div>
-                    <h1 className="page-title">Buy day</h1>
+                    <h1 className="page-title">יום קנייה</h1>
                     <p className="page-sub num">
-                        {money(plan.budget, base)} this month · portfolio {money(plan.totalBefore, base)} → {money(plan.totalAfter, base)}
-                        {plan.targetsSumPct > 0 && plan.targetsSumPct < 99.999 ? ` · targets add up to ${plan.targetsSumPct}%, the rest stays cash` : ''}
+                        {money(plan.budget, base)} החודש · התיק עולה מ-{money(plan.totalBefore, base)} ל-{money(plan.totalAfter, base)}
+                        {plan.targetsSumPct > 0 && plan.targetsSumPct < 99.999 ? ` · היעדים מסתכמים ב-${plan.targetsSumPct}%, והשאר נשאר במזומן` : ''}
                     </p>
                 </div>
-                <form className="flex items-center gap-2" action="/portfolio/buy-day">
+                <form className="flex flex-wrap items-center gap-2" action="/portfolio/buy-day">
                     <label className="flex h-10 items-center gap-2 rounded-[10px] border border-line bg-card px-3 focus-within:border-brand">
-                        <span className="mono text-xs text-faint">{base}</span>
-                        <input name="budget" type="number" inputMode="decimal" min="0" step="any" defaultValue={plan.budget || ''} placeholder="this month" className="num w-28 bg-transparent text-[14px] font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-faint" />
+                        <span className="text-xs text-faint">{base === 'ILS' ? '₪' : '$'}</span>
+                        <input name="budget" type="number" inputMode="decimal" min="0" step="any" defaultValue={plan.budget || ''} placeholder="סכום החודש" className="num w-28 bg-transparent text-[14px] font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-faint" />
                     </label>
-                    <button type="submit" className="btn btn-ghost h-10">Re-plan</button>
-                    <Link href="/portfolio" className="btn btn-ghost h-10"><Briefcase /> Portfolio</Link>
+                    <button type="submit" className="btn btn-ghost h-10">לחשב מחדש</button>
+                    <Link href="/portfolio" className="btn btn-ghost h-10"><Briefcase /> התיק</Link>
                 </form>
             </header>
 
             <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
                 <div className="flex min-w-0 flex-col gap-3">
                     <Panel
-                        title="The plan"
+                        title="התוכנית"
                         sub={plan.rows.length
-                            ? `${buys.length} ${buys.length === 1 ? 'buy' : 'buys'} for ${money(spent, base)}${plan.leftover > 0 ? `, ${money(plan.leftover, base)} left over` : ''}${sells.length ? ` · ${sells.length} to trim` : ' · nothing to trim'}`
-                            : 'Nothing to plan yet'}
+                            ? `${buys.length === 1 ? 'קנייה אחת' : `${buys.length} קניות`} ב-${money(spent, base)}${plan.leftover > 0 ? `, נשארים ${money(plan.leftover, base)}` : ''}${sells.length ? ` · ${sells.length === 1 ? 'מניה אחת לצמצם' : `${sells.length} מניות לצמצם`}` : ' · אין מה לצמצם'}`
+                            : 'עוד אין מה לתכנן'}
                     >
                         <PlanTable plan={plan} />
                     </Panel>
                     {sells.length > 0 && (
                         <p className="px-1 text-[12.5px] text-faint">
-                            Trims are suggestions from your own target weights and tolerance ({settings.driftTolerancePct} points). A symbol with no target is flagged every month until you give it one or sell it.
+                            הצמצומים מחושבים ממשקלי היעד שלך ומהסטייה המותרת ({settings.driftTolerancePct} נקודות). מניה בלי יעד מסומנת כל חודש, עד שקובעים לה יעד או מוכרים אותה.
                         </p>
                     )}
                 </div>
-                <Panel title="Targets" sub="What the portfolio should look like" className="self-start" bodyClassName="p-0">
+                <Panel title="יעדים" sub="איך התיק אמור להיראות" className="self-start" bodyClassName="p-0">
                     <TargetsEditor settings={settings} heldSymbols={heldSymbols} />
                 </Panel>
             </div>

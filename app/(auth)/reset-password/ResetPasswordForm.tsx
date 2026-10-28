@@ -41,13 +41,13 @@ const ResetPasswordForm = () => {
 
     useEffect(() => {
         if (error === 'INVALID_TOKEN') {
-            toast.error('Reset link is invalid or expired.');
+            toast.error('הקישור לאיפוס לא תקין או שפג תוקפו.');
         }
     }, [error]);
 
     const onSubmit = async (data: ResetPasswordFormData) => {
         if (!token) {
-            toast.error('Reset link is invalid or expired.');
+            toast.error('הקישור לאיפוס לא תקין או שפג תוקפו.');
             return;
         }
 
@@ -58,24 +58,24 @@ const ResetPasswordForm = () => {
             });
 
             if (result.success) {
-                toast.success('Password updated. You can sign in now.');
+                toast.success('הסיסמה עודכנה. אפשר להתחבר.');
                 router.push('/sign-in');
                 return;
             }
 
-            toast.error('Password reset failed', {
-                description: result.error ?? 'Unable to reset your password.',
+            toast.error('איפוס הסיסמה נכשל', {
+                description: result.error ?? 'לא הצלחנו לאפס את הסיסמה.',
             });
         } catch (error) {
-            toast.error('Password reset failed', {
-                description: error instanceof Error ? error.message : 'Unable to reset your password.',
+            toast.error('איפוס הסיסמה נכשל', {
+                description: error instanceof Error ? error.message : 'לא הצלחנו לאפס את הסיסמה.',
             });
         }
     };
 
     return (
         <>
-            <h1 className="form-title">Choose a new password</h1>
+            <h1 className="form-title">בחירת סיסמה חדשה</h1>
             <p className="text-sm text-gray-400 mb-6">
                 Enter a new password for your account.
             </p>
@@ -83,8 +83,8 @@ const ResetPasswordForm = () => {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <InputField
                     name="newPassword"
-                    label="New Password"
-                    placeholder="Enter a new password"
+                    label="סיסמה חדשה"
+                    placeholder="סיסמה חדשה"
                     type="password"
                     register={register}
                     error={errors.newPassword}
@@ -94,23 +94,23 @@ const ResetPasswordForm = () => {
 
                 <InputField
                     name="confirmPassword"
-                    label="Confirm Password"
-                    placeholder="Confirm your new password"
+                    label="אימות סיסמה"
+                    placeholder="הקלידו שוב את הסיסמה החדשה"
                     type="password"
                     register={register}
                     error={errors.confirmPassword}
                     validation={{
-                        required: 'Please confirm your new password',
+                        required: 'צריך להקליד שוב את הסיסמה',
                         validate: (value: string) =>
-                            value === newPassword || 'Passwords do not match',
+                            value === newPassword || 'הסיסמאות לא זהות',
                     }}
                 />
 
                 <Button type="submit" disabled={isSubmitting} className="yellow-btn w-full mt-5">
-                    {isSubmitting ? 'Resetting password' : 'Reset password'}
+                    {isSubmitting ? 'מאפסים' : 'לאפס סיסמה'}
                 </Button>
 
-                <FooterLink text="Need a fresh link?" linkText="Request another one" href="/forgot-password" />
+                <FooterLink text="צריך קישור חדש?" linkText="לבקש עוד אחד" href="/forgot-password" />
                 <OpenDevSocietyBranding outerClassName="mt-10 flex justify-center" />
             </form>
         </>

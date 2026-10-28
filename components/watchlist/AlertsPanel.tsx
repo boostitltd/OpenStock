@@ -20,11 +20,11 @@ type AlertRow = {
 };
 
 const statusOf = (alert: AlertRow) => {
-    if (alert.triggered) return { label: 'Triggered', className: 'pill is-brand' };
-    if (!alertsEnabled) return { label: 'Paused', className: 'pill' };
-    if (alert.expiresAt && new Date(alert.expiresAt) < new Date()) return { label: 'Expired', className: 'pill' };
-    if (alert.active === false) return { label: 'Paused', className: 'pill' };
-    return { label: 'Watching', className: 'pill is-up' };
+    if (alert.triggered) return { label: 'הופעלה', className: 'pill is-brand' };
+    if (!alertsEnabled) return { label: 'מושהית', className: 'pill' };
+    if (alert.expiresAt && new Date(alert.expiresAt) < new Date()) return { label: 'פגה', className: 'pill' };
+    if (alert.active === false) return { label: 'מושהית', className: 'pill' };
+    return { label: 'במעקב', className: 'pill is-up' };
 };
 
 export default function AlertsPanel({ alerts }: { alerts: AlertRow[] }) {
@@ -35,10 +35,10 @@ export default function AlertsPanel({ alerts }: { alerts: AlertRow[] }) {
         setPendingId(alert._id);
         try {
             await deleteAlert(alert._id);
-            toast.success(`Alert for ${alert.symbol} removed`);
+            toast.success(`ההתראה ל-${alert.symbol} נמחקה`);
             router.refresh();
         } catch {
-            toast.error("Couldn’t remove the alert");
+            toast.error("לא הצלחנו למחוק את ההתראה");
         } finally {
             setPendingId(null);
         }
@@ -48,9 +48,9 @@ export default function AlertsPanel({ alerts }: { alerts: AlertRow[] }) {
         return (
             <div className="empty-state py-10">
                 <span className="empty-icon"><BellRing className="size-5" /></span>
-                <h3>Alerts come with Cloud</h3>
-                <p className="max-w-64 text-[13px]">Email price alerts are part of OpenStock Cloud, $5 a month and coming soon.</p>
-                <Link href="/#data" className="btn btn-ghost mt-2">See OpenStock Cloud</Link>
+                <h3>התראות הן חלק מ-Cloud</h3>
+                <p className="max-w-64 text-[13px]">התראות מחיר במייל הן חלק מ-OpenStock Cloud, ב-5 דולר לחודש. השירות עוד לא פתוח.</p>
+                <Link href="/#data" className="btn btn-ghost mt-2">על OpenStock Cloud</Link>
             </div>
         );
     }
@@ -59,8 +59,8 @@ export default function AlertsPanel({ alerts }: { alerts: AlertRow[] }) {
         return (
             <div className="empty-state py-10">
                 <span className="empty-icon"><BellRing className="size-5" /></span>
-                <h3>No alerts yet</h3>
-                <p className="max-w-60 text-[13px]">Use the bell on any row, or “Set alert” on a stock page. We email you when it fires.</p>
+                <h3>עוד אין התראות</h3>
+                <p className="max-w-60 text-[13px]">לחצו על הפעמון בשורה של מניה, או על "התראה" בעמוד המניה. נשלח מייל כשההתראה מופעלת.</p>
             </div>
         );
     }
@@ -69,7 +69,7 @@ export default function AlertsPanel({ alerts }: { alerts: AlertRow[] }) {
         <>
             {!alertsEnabled && (
                 <p className="px-3 pt-3 pb-1 text-[12.5px] text-faint">
-                    Alerts moved to <Link href="/#data" className="text-brand-ink hover:underline">OpenStock Cloud</Link>, so these are paused.
+                    ההתראות עברו ל-<Link href="/#data" className="text-brand-ink hover:underline">OpenStock Cloud</Link>, ולכן אלה מושהות.
                 </p>
             )}
             <ul className="row-list">
@@ -78,10 +78,10 @@ export default function AlertsPanel({ alerts }: { alerts: AlertRow[] }) {
                     return (
                         <li key={alert._id} className="flex items-center gap-3 px-3 py-2.5">
                             <div className="min-w-0 flex-1">
-                                <p className="mono font-semibold text-foreground">{alert.symbol}</p>
+                                <p dir="ltr" className="mono text-start font-semibold text-foreground">{alert.symbol}</p>
                                 <p className="num truncate text-[12.5px] text-faint">
-                                    {alert.condition === 'ABOVE' ? 'Above' : 'Below'} {formatPrice(alert.targetPrice)}
-                                    {alert.expiresAt && !alert.triggered && ` · until ${new Date(alert.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                                    {alert.condition === 'ABOVE' ? 'מעל' : 'מתחת ל-'} {formatPrice(alert.targetPrice, alert.symbol.endsWith('.TA') ? 'ILS' : 'USD')}
+                                    {alert.expiresAt && !alert.triggered && ` · עד ${new Date(alert.expiresAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' })}`}
                                 </p>
                             </div>
                             <span className={status.className}>{status.label}</span>
@@ -90,8 +90,8 @@ export default function AlertsPanel({ alerts }: { alerts: AlertRow[] }) {
                                 onClick={() => handleDelete(alert)}
                                 disabled={pendingId === alert._id}
                                 className="icon-btn is-danger"
-                                title="Remove alert"
-                                aria-label={`Remove alert for ${alert.symbol}`}
+                                title="מחיקת ההתראה"
+                                aria-label={`מחיקת ההתראה ל-${alert.symbol}`}
                             >
                                 <Trash2 />
                             </button>

@@ -28,7 +28,7 @@ const SignUp = () => {
             fullName: '',
             email: '',
             password: '',
-            country: 'IN',
+            country: 'IL',
             investmentGoals: 'Growth',
             riskTolerance: 'Medium',
             preferredIndustry: 'Technology'
@@ -45,53 +45,53 @@ const SignUp = () => {
                 router.push('/dashboard');
                 return;
             }
-            toast.error('Sign up failed', {
-                description: result.error ?? 'We could not create your account.',
+            toast.error('ההרשמה נכשלה', {
+                description: result.error ?? 'לא הצלחנו ליצור את החשבון.',
             });
         } catch (e) {
             console.error(e);
-            toast.error('Sign up failed', {
-                description: e instanceof Error ? e.message : 'Failed to create an account.'
+            toast.error('ההרשמה נכשלה', {
+                description: e instanceof Error ? e.message : 'יצירת החשבון נכשלה.'
             })
         }
     }
 
     return (
         <>
-            <h1 className="form-title mb-2">Create your account</h1>
-            <p className="mb-8 text-faint">Free and open source. No card needed.</p>
+            <h1 className="form-title mb-2">יצירת חשבון</h1>
+            <p className="mb-8 text-faint">חינם וקוד פתוח. בלי כרטיס אשראי.</p>
 
             <SocialAuthButtons />
 
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
-                <section className="flex flex-col gap-4" aria-label="Account">
+                <section className="flex flex-col gap-4" aria-label="חשבון">
                     <InputField
                         name="fullName"
-                        label="Full name"
-                        placeholder="Your name"
+                        label="שם מלא"
+                        placeholder="השם שלך"
                         register={register}
                         error={errors.fullName}
-                        validation={{ required: 'Full name is required', minLength: 2 }}
+                        validation={{ required: 'צריך למלא שם מלא', minLength: 2 }}
                     />
                     <InputField
                         name="email"
-                        label="Email"
+                        label="מייל"
                         placeholder="you@example.com"
                         register={register}
                         error={errors.email}
                         validation={{
-                            required: 'Email is required',
+                            required: 'צריך למלא מייל',
                             pattern: {
                                 value: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
-                                message: 'Please enter a valid email address'
+                                message: 'כתובת המייל לא תקינה'
                             }
                         }}
                     />
                     <div className="flex flex-col gap-2">
                         <InputField
                             name="password"
-                            label="Password"
-                            placeholder="At least 8 characters"
+                            label="סיסמה"
+                            placeholder="לפחות 8 תווים"
                             type="password"
                             register={register}
                             error={errors.password}
@@ -103,26 +103,26 @@ const SignUp = () => {
 
                 <section className="flex flex-col gap-5 border-t border-line pt-6" aria-labelledby="personalize">
                     <div>
-                        <p id="personalize" className="kicker text-brand-ink">Personalize</p>
-                        <p className="mt-1 text-[13px] text-faint">Used to tailor your welcome email.</p>
+                        <p id="personalize" className="kicker text-brand-ink">התאמה אישית</p>
+                        <p className="mt-1 text-[13px] text-faint">משמש להתאמת מייל הפתיחה.</p>
                     </div>
                     <CountrySelectField
                         name="country"
-                        label="Country"
+                        label="מדינה"
                         control={control}
                         error={errors.country}
                         required
                     />
-                    <ChoiceChips name="investmentGoals" label="Investment goal" options={INVESTMENT_GOALS} control={control} />
-                    <ChoiceChips name="riskTolerance" label="Risk tolerance" options={RISK_TOLERANCE_OPTIONS} control={control} />
-                    <ChoiceChips name="preferredIndustry" label="Preferred industry" options={PREFERRED_INDUSTRIES} control={control} />
+                    <ChoiceChips name="investmentGoals" label="מטרת השקעה" options={INVESTMENT_GOALS} control={control} />
+                    <ChoiceChips name="riskTolerance" label="רמת סיכון" options={RISK_TOLERANCE_OPTIONS} control={control} />
+                    <ChoiceChips name="preferredIndustry" label="ענף מועדף" options={PREFERRED_INDUSTRIES} control={control} />
                 </section>
 
                 <div className="flex flex-col gap-4">
                     <Button type="submit" disabled={isSubmitting} className="yellow-btn w-full">
-                        {isSubmitting ? 'Creating account' : 'Create account'}
+                        {isSubmitting ? 'יוצרים חשבון' : 'ליצור חשבון'}
                     </Button>
-                    <FooterLink text="Already have an account?" linkText="Sign in" href="/sign-in" />
+                    <FooterLink text="כבר יש לך חשבון?" linkText="להתחברות" href="/sign-in" />
                 </div>
 
                 <OpenDevSocietyBranding outerClassName="flex justify-center" />

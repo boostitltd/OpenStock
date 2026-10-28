@@ -31,12 +31,12 @@ const Layout = async ({ children }: { children : React.ReactNode }) => {
             <section className="auth-right-section">
                 <div className="z-10 relative lg:mt-4 lg:mb-16">
                     <blockquote className="auth-blockquote">
-                        “For me, OpenStock isn’t just another stock app. It’s about giving people clarity and control in the market, without barriers or subscriptions.”
+                        &quot;בשבילי OpenStock הוא לא עוד אפליקציית מניות. הוא נותן לאנשים בהירות ושליטה בשוק, בלי חסמים ובלי מנויים.&quot;
                     </blockquote>
                     <div className="flex items-center justify-between">
                         <div>
                             <cite className="auth-testimonial-author">- Ravi Pratap Singh (@ravixalgorithm)</cite>
-                            <p className="max-md:text-xs text-gray-500">Founder @opendevsociety</p>
+                            <p className="max-md:text-xs text-gray-500">מייסד @opendevsociety</p>
                         </div>
                         <div className="flex items-center gap-0.5">
                             {[1,2,3,4,5].map((star) => (

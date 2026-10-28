@@ -20,7 +20,7 @@ async function Sentiment({ symbol }: { symbol: string }) {
     const insight = await getStockSentimentInsights(symbol);
     if (!insight) return null;
     return (
-        <Panel title="Sentiment" sub="Reddit, X.com, news and Polymarket">
+        <Panel title="סנטימנט" sub="Reddit, X.com, חדשות ו-Polymarket">
             <StockSentimentCard insight={insight} />
         </Panel>
     );
@@ -29,8 +29,8 @@ async function Sentiment({ symbol }: { symbol: string }) {
 async function DividendYield({ symbol }: { symbol: string }) {
     const dividendYield = await getStockMetrics(symbol);
     return (
-        <Panel title="Dividend Yield">
-            <p className="text-2xl font-semibold text-white">
+        <Panel title="תשואת דיבידנד">
+            <p className="num text-2xl font-semibold text-white">
                 {dividendYield !== null ? `${dividendYield.toFixed(2)}%` : "—"}
             </p>
         </Panel>
@@ -55,20 +55,20 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
                         <StockChart tvSymbol={tvSymbol} scriptUrl={`${scriptUrl}advanced-chart.js`} />
                     ) : (
                         // TradingView refuses this exchange's chart in embeds; say so instead of showing its error
-                        <Panel title="Chart" sub="Only on TradingView for this exchange">
+                        <Panel title="גרף" sub="לבורסה הזו רק באתר TradingView">
                             <div className="empty-state py-14">
                                 <span className="empty-icon"><CandlestickChart className="size-5" /></span>
-                                <h3>Chart not available here</h3>
+                                <h3>הגרף לא זמין כאן</h3>
                                 <p className="max-w-80 text-[13px]">
-                                    TradingView doesn’t license {tvSymbol.split(':')[0]} charts for other sites. Financials, technicals and the profile below still work.
+                                    TradingView לא מרשה להציג גרפים של {tvSymbol.split(':')[0]} באתרים אחרים. הדוחות, הניתוח הטכני והפרופיל למטה עובדים.
                                 </p>
                                 <a href={tradingViewSymbolUrl(tvSymbol)} target="_blank" rel="noopener noreferrer" className="btn btn-ghost mt-2">
-                                    Open chart on TradingView
+                                    לגרף ב-TradingView
                                 </a>
                             </div>
                         </Panel>
                     )}
-                    <Panel title="Financials" sub="Income statement, balance sheet and ratios">
+                    <Panel title="דוחות כספיים" sub="דוח רווח והפסד, מאזן ויחסים פיננסיים">
                         <TradingViewWidget
                             scriptUrl={`${scriptUrl}financials.js`}
                             config={COMPANY_FINANCIALS_WIDGET_CONFIG(tvSymbol)}
@@ -78,7 +78,7 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
                 </div>
 
                 <div className="flex min-w-0 flex-col gap-3">
-                    <Panel title="Technicals" sub="Oscillators and moving averages, 1h">
+                    <Panel title="ניתוח טכני" sub="מתנדים וממוצעים נעים, שעתי">
                         <TradingViewWidget
                             scriptUrl={`${scriptUrl}technical-analysis.js`}
                             config={TECHNICAL_ANALYSIS_WIDGET_CONFIG(tvSymbol)}
@@ -91,7 +91,7 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
                     <Suspense fallback={null}>
                         <Sentiment symbol={symbol} />
                     </Suspense>
-                    <Panel title="Profile" sub="What the company does">
+                    <Panel title="פרופיל" sub="במה החברה עוסקת">
                         <TradingViewWidget
                             scriptUrl={`${scriptUrl}symbol-profile.js`}
                             config={COMPANY_PROFILE_WIDGET_CONFIG(tvSymbol)}

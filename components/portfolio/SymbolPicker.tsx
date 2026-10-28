@@ -18,7 +18,7 @@ const rank = (s: Stock) => (s.symbol.endsWith('.TA') ? 0 : s.exchange === 'US' ?
 
 // Type a company name ("phoenix", "leumi") or a ticker and pick the listing; the field then holds the symbol
 // the rest of the app understands (PHOE.TA, LUMI.TA, AAPL). Typing a symbol directly still works.
-export default function SymbolPicker({ value, onChange, placeholder = 'Company or symbol', autoFocus, className, inputClassName }: Props) {
+export default function SymbolPicker({ value, onChange, placeholder = 'חברה או סימול', autoFocus, className, inputClassName }: Props) {
     const [query, setQuery] = useState(value);
     const [results, setResults] = useState<Stock[]>([]);
     const [open, setOpen] = useState(false);
@@ -82,19 +82,20 @@ export default function SymbolPicker({ value, onChange, placeholder = 'Company o
                 onChange={(e) => { setQuery(e.target.value); onChange(e.target.value.trim().toUpperCase()); }}
                 onFocus={() => results.length && setOpen(true)}
                 onKeyDown={onKeyDown}
-                className={cn('mono uppercase', inputClassName)}
+                dir="auto"
+                className={cn('mono uppercase text-start', inputClassName)}
                 aria-autocomplete="list"
             />
-            {loading && <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[11px] text-faint">…</span>}
+            {loading && <span className="absolute end-0 top-1/2 -translate-y-1/2 text-[11px] text-faint">…</span>}
             {open && results.length > 0 && (
-                <ul role="listbox" className="absolute left-0 top-full z-50 mt-1 max-h-72 w-[420px] max-w-[80vw] overflow-y-auto rounded-[11px] border border-line bg-card p-1 shadow-xl">
+                <ul role="listbox" className="absolute start-0 top-full z-50 mt-1 max-h-72 w-[420px] max-w-[80vw] overflow-y-auto rounded-[11px] border border-line bg-card p-1 shadow-xl">
                     {results.map((s, i) => (
                         <li key={s.symbol} role="option" aria-selected={i === active}>
                             <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(s)} onMouseEnter={() => setActive(i)}
-                                className={cn('flex w-full items-center gap-3 rounded-[8px] px-2.5 py-2 text-left', i === active ? 'bg-hover' : 'hover:bg-hover/60')}>
-                                <span className="mono w-24 shrink-0 text-[13px] font-semibold text-foreground">{s.symbol}</span>
+                                className={cn('flex w-full items-center gap-3 rounded-[8px] px-2.5 py-2 text-start', i === active ? 'bg-hover' : 'hover:bg-hover/60')}>
+                                <span dir="ltr" className="mono w-24 shrink-0 text-start text-[13px] font-semibold text-foreground">{s.symbol}</span>
                                 <span className="min-w-0 flex-1 truncate text-[13px] text-muted-foreground">{s.name}</span>
-                                <span className="pill h-5 px-1.5 text-[10.5px]">{s.symbol.endsWith('.TA') ? 'TASE · ₪' : s.exchange === 'US' ? 'US · $' : s.exchange}</span>
+                                <span className="pill h-5 px-1.5 text-[10.5px]">{s.symbol.endsWith('.TA') ? 'ת"א · ₪' : s.exchange === 'US' ? 'ארה"ב · $' : s.exchange}</span>
                             </button>
                         </li>
                     ))}

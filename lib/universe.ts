@@ -62,3 +62,20 @@ export function hebrewName(symbol: string, fallback?: string): string {
 export function universeEntry(symbol: string): UniverseEntry | undefined {
     return BY_SYMBOL.get(symbol.toUpperCase());
 }
+
+export const hasHebrew = (s: string) => /[֐-׿]/.test(s);
+
+// Finnhub's search only understands Latin names, so a Hebrew query ("פניקס", "בנק לאומי") is matched here:
+// quote marks and a leading ה are ignored on both sides, and either side may contain the other.
+const normalise = (s: string) => s.replace(/["'״׳\-.]/g, '').replace(/\s+/g, ' ').trim();
+const bare = (s: string) => normalise(s).replace(/^ה(?=\S{2})/, '');
+
+export function searchHebrew(query: string): UniverseEntry[] {
+    const q = bare(query);
+    if (!q) return [];
+    return UNIVERSE.filter((u) => {
+        const name = bare(u.he);
+        const words = normalise(u.he).split(' ').map(bare);
+        return name.includes(q) || q.includes(name) || words.some((w) => w.length > 1 && (w.startsWith(q) || q.split(' ').includes(w)));
+    });
+}

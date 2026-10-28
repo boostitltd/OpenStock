@@ -7,6 +7,7 @@ import { QUOTE_TTL_SECONDS } from '@/lib/market-data';
 import { hasFinnhubQuotes, hasQuotes, hasYahooQuotes } from '@/lib/markets';
 import { getYahooQuote } from '@/lib/actions/yahoo.actions';
 import { getSession } from '@/lib/better-auth/auth';
+import { hasHebrew, hebrewName, searchHebrew } from '@/lib/universe';
 
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
 // Key pool: each free key has its own 60 req/min, so N keys = N x the quota. Rotated per request.
@@ -196,7 +197,7 @@ export async function getCompanyProfile(symbol: string): Promise<FinnhubCompanyP
     // Tel Aviv: name, currency and exchange ride along with the Yahoo quote (no logo or market cap there)
     if (hasYahooQuotes(symbol)) {
         const quote = await getYahooQuote(symbol, 86400);
-        return quote ? { name: quote.name || symbol, currency: quote.currency, exchange: quote.exchange, ticker: symbol } : null;
+        return quote ? { name: hebrewName(symbol, quote.name || symbol), currency: quote.currency, exchange: quote.exchange, ticker: symbol } : null;
     }
     // Profiles exist for stocks Finnhub free covers; crypto pairs and non-US listings have none
     if (symbol.includes(':') || !hasFinnhubQuotes(symbol)) return null;
@@ -354,6 +355,9 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
                 type: 'Common Stock',
                 __exchange: exchange,
             }));
+        } else if (hasHebrew(trimmed)) {
+            // Hebrew names are matched locally: Finnhub knows the companies only by their English names
+            results = searchHebrew(trimmed).map((u) => ({ symbol: u.symbol, description: u.he, displaySymbol: u.symbol, type: u.kind === 'index' ? 'ETF' : 'Common Stock' }));
         } else {
             // A public server action: only signed-in users may spend Finnhub quota on searches
             if (!(await getSession())?.user) return [];
@@ -365,7 +369,7 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
         const mapped: StockWithWatchlistStatus[] = results
             .map((r) => {
                 const upper = (r.symbol || '').toUpperCase();
-                const name = r.description || upper;
+                const name = hebrewName(upper, r.description || upper);
                 const exchangeFromProfile = r.__exchange;
                 const exchange = getExchangeLabel(upper, exchangeFromProfile);
                 const type = r.type || 'Stock';

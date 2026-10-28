@@ -21,20 +21,20 @@ export async function createAlert(params: {
     condition: 'ABOVE' | 'BELOW';
 }) {
     const userId = await requireUserId();
-    if (!alertsEnabled) throw new Error('Price alerts are part of OpenStock Cloud');
+    if (!alertsEnabled) throw new Error('התראות מחיר הן חלק מ-OpenStock Cloud');
     const symbol = String(params.symbol ?? '').trim().toUpperCase();
     const targetPrice = Number(params.targetPrice);
     const condition = params.condition;
 
-    if (!SYMBOL_PATTERN.test(symbol)) throw new Error('Invalid symbol');
-    if (!CONDITIONS.includes(condition)) throw new Error('Invalid condition');
+    if (!SYMBOL_PATTERN.test(symbol)) throw new Error('הסימול לא תקין');
+    if (!CONDITIONS.includes(condition)) throw new Error('התנאי לא תקין');
     // The alert checker prices symbols through Finnhub (US stocks and crypto) or Yahoo (Tel Aviv)
-    if (!hasQuotes(symbol)) throw new Error('Alerts are available for US stocks, Tel Aviv and crypto');
-    if (!Number.isFinite(targetPrice) || targetPrice <= 0) throw new Error('Target price must be a positive number');
+    if (!hasQuotes(symbol)) throw new Error('התראות זמינות למניות בארה"ב, בתל אביב ולקריפטו');
+    if (!Number.isFinite(targetPrice) || targetPrice <= 0) throw new Error('מחיר היעד צריך להיות מספר חיובי');
 
     await connectToDatabase();
     if (await Alert.countDocuments({ userId, active: true }) >= MAX_ACTIVE_ALERTS) {
-        throw new Error(`You can have up to ${MAX_ACTIVE_ALERTS} active alerts`);
+        throw new Error(`אפשר עד ${MAX_ACTIVE_ALERTS} התראות פעילות`);
     }
 
     try {
@@ -44,7 +44,7 @@ export async function createAlert(params: {
         return JSON.parse(JSON.stringify(newAlert));
     } catch (error) {
         console.error('Error creating alert:', error);
-        throw new Error('Failed to create alert');
+        throw new Error('לא הצלחנו ליצור את ההתראה');
     }
 }
 
@@ -71,6 +71,6 @@ export async function deleteAlert(alertId: string) {
         return { success: true };
     } catch (error) {
         console.error('Error deleting alert:', error);
-        throw new Error('Failed to delete alert');
+        throw new Error('לא הצלחנו למחוק את ההתראה');
     }
 }

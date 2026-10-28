@@ -7,6 +7,7 @@ import { getCompanyProfile, getLiveQuotes } from "@/lib/actions/finnhub.actions"
 import { formatNumber, formatPrice, formatSymbolForTradingView } from "@/lib/utils";
 import { hasQuotes } from "@/lib/markets";
 import { symbolInfoConfig } from "@/lib/constants";
+import { hebrewName } from "@/lib/universe";
 import TradingViewWidget from "@/components/TradingViewWidget";
 
 // Symbols Finnhub's free plan can't price (most non-US listings) use TradingView's quote panel instead.
@@ -17,13 +18,13 @@ async function TradingViewHeader({ symbol }: { symbol: string }) {
         <section className="hatch">
             <div className="card flex flex-wrap items-center justify-between gap-4 p-4">
                 <div className="min-w-0">
-                    <h1 className="mono truncate text-xl font-bold tracking-[-0.02em]">{symbol}</h1>
-                    <p className="text-[12.5px] text-faint">{tvSymbol.split(':')[0]} · quote via TradingView</p>
+                    <h1 className="truncate text-xl font-bold tracking-[-0.02em]">{hebrewName(symbol)}</h1>
+                    <p className="text-[12.5px] text-faint"><span dir="ltr" className="mono">{symbol}</span> · {tvSymbol.split(':')[0]} · שער דרך TradingView</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <WatchlistButton symbol={symbol} company={symbol} isInWatchlist={isInWatchlist} />
-                    <span className="pill h-9 px-3" title="Price alerts need a quote source we can check every 5 minutes">
-                        <Bell /> Alerts: US, Tel Aviv and crypto
+                    <span className="pill h-9 px-3" title="התראות מחיר צריכות מקור שערים שאפשר לבדוק כל 5 דקות">
+                        <Bell /> התראות: ארה&quot;ב, תל אביב וקריפטו
                     </span>
                 </div>
             </div>
@@ -49,10 +50,10 @@ export default async function StockHeader({ symbol }: { symbol: string }) {
     const money = (value?: number) => (value ? formatPrice(value, currency) : '—');
 
     const stats = [
-        { label: 'Open', icon: CalendarClock, value: money(quote?.o), hint: 'First trade of the session' },
-        { label: 'Day range', icon: MoveVertical, value: quote?.l && quote?.h ? `${money(quote.l)} – ${money(quote.h)}` : '—', hint: 'Low to high' },
-        { label: 'Prev close', icon: Gauge, value: money(quote?.pc), hint: 'Last session' },
-        { label: 'Market cap', icon: Landmark, value: profile?.marketCapitalization ? formatNumber(profile.marketCapitalization) : '—', hint: currency },
+        { label: 'פתיחה', icon: CalendarClock, value: money(quote?.o), hint: 'העסקה הראשונה במסחר' },
+        { label: 'טווח יומי', icon: MoveVertical, value: quote?.l && quote?.h ? `${money(quote.l)} – ${money(quote.h)}` : '—', hint: 'מהנמוך לגבוה' },
+        { label: 'סגירה קודמת', icon: Gauge, value: money(quote?.pc), hint: 'יום המסחר הקודם' },
+        { label: 'שווי שוק', icon: Landmark, value: profile?.marketCapitalization ? formatNumber(profile.marketCapitalization) : '—', hint: currency },
     ];
 
     return (
@@ -66,7 +67,7 @@ export default async function StockHeader({ symbol }: { symbol: string }) {
                     )}
                     <div className="min-w-0">
                         <h1 className="truncate text-xl font-bold tracking-[-0.03em]">{company}</h1>
-                        <p className="mono truncate text-[12.5px] text-faint">
+                        <p dir="ltr" className="mono truncate text-end text-[12.5px] text-faint">
                             {[symbol, profile?.exchange, profile?.finnhubIndustry].filter(Boolean).join(' · ')}
                         </p>
                     </div>
@@ -77,7 +78,7 @@ export default async function StockHeader({ symbol }: { symbol: string }) {
                 <div className="flex items-center gap-2">
                     <WatchlistButton symbol={symbol} company={company} isInWatchlist={isInWatchlist} />
                     <CreateAlertModal symbol={symbol} currentPrice={quote?.c} currency={currency}>
-                        <button type="button" className="btn btn-primary"><Bell /> Set alert</button>
+                        <button type="button" className="btn btn-primary"><Bell /> התראה</button>
                     </CreateAlertModal>
                 </div>
             </div>
@@ -104,7 +105,7 @@ export function StockHeaderSkeleton() {
                     <span className="h-5 w-48 animate-pulse rounded-md bg-hover" />
                     <span className="h-3 w-32 animate-pulse rounded-md bg-hover" />
                 </span>
-                <span className="ml-auto h-8 w-36 animate-pulse rounded-md bg-hover" />
+                <span className="ms-auto h-8 w-36 animate-pulse rounded-md bg-hover" />
             </div>
             <div className="bento mt-[3px]">
                 {[0, 1, 2, 3].map((i) => (

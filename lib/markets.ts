@@ -30,7 +30,7 @@ const hm = (h: number, m = 0) => h * 60 + m;
 
 export const MARKETS: Market[] = [
     {
-        id: 'us', name: 'United States', short: 'US', timeZone: 'America/New_York', hours: { open: hm(9, 30), close: hm(16) }, feed: 'Live',
+        id: 'us', name: 'ארה"ב', short: 'US', timeZone: 'America/New_York', hours: { open: hm(9, 30), close: hm(16) }, feed: 'Live',
         pulse: [
             { symbol: 'AMEX:SPY', label: 'S&P 500', finnhub: 'SPY' },
             { symbol: 'NASDAQ:QQQ', label: 'Nasdaq 100', finnhub: 'QQQ' },
@@ -38,31 +38,31 @@ export const MARKETS: Market[] = [
             { symbol: 'AMEX:IWM', label: 'Russell 2000', finnhub: 'IWM' },
         ],
         groups: [
-            { title: 'Financial', symbols: [['NYSE:JPM', 'JPMorgan Chase'], ['NYSE:BAC', 'Bank of America'], ['NYSE:WFC', 'Wells Fargo'], ['NYSE:GS', 'Goldman Sachs'], ['NYSE:MA', 'Mastercard'], ['NYSE:V', 'Visa']] },
-            { title: 'Technology', symbols: [['NASDAQ:AAPL', 'Apple'], ['NASDAQ:MSFT', 'Microsoft'], ['NASDAQ:NVDA', 'NVIDIA'], ['NASDAQ:GOOGL', 'Alphabet'], ['NASDAQ:META', 'Meta'], ['NASDAQ:AMD', 'AMD']] },
-            { title: 'Consumer', symbols: [['NASDAQ:AMZN', 'Amazon'], ['NASDAQ:TSLA', 'Tesla'], ['NYSE:WMT', 'Walmart'], ['NASDAQ:COST', 'Costco'], ['NYSE:KO', 'Coca-Cola'], ['NASDAQ:NFLX', 'Netflix']] },
+            { title: 'פיננסים', symbols: [['NYSE:JPM', 'JPMorgan Chase'], ['NYSE:BAC', 'Bank of America'], ['NYSE:WFC', 'Wells Fargo'], ['NYSE:GS', 'Goldman Sachs'], ['NYSE:MA', 'Mastercard'], ['NYSE:V', 'Visa']] },
+            { title: 'טכנולוגיה', symbols: [['NASDAQ:AAPL', 'Apple'], ['NASDAQ:MSFT', 'Microsoft'], ['NASDAQ:NVDA', 'NVIDIA'], ['NASDAQ:GOOGL', 'Alphabet'], ['NASDAQ:META', 'Meta'], ['NASDAQ:AMD', 'AMD']] },
+            { title: 'צריכה', symbols: [['NASDAQ:AMZN', 'Amazon'], ['NASDAQ:TSLA', 'Tesla'], ['NYSE:WMT', 'Walmart'], ['NASDAQ:COST', 'Costco'], ['NYSE:KO', 'Coca-Cola'], ['NASDAQ:NFLX', 'Netflix']] },
         ],
         heatmap: 'stocks', news: 'stock',
     },
     {
         // TASE trades Monday to Friday since January 2026 (Friday closes early, ~14:00; not modelled).
         // Quotes and alerts come from Yahoo Finance (delayed); charts, profiles and financials from TradingView embeds.
-        id: 'il', name: 'Israel', short: 'IL', timeZone: 'Asia/Jerusalem', hours: { open: hm(9, 59), close: hm(17, 14) }, feed: 'Delayed',
+        id: 'il', name: 'ישראל', short: 'IL', timeZone: 'Asia/Jerusalem', hours: { open: hm(9, 59), close: hm(17, 14) }, feed: 'Delayed',
         pulse: [
-            { symbol: 'TASE:TA35', label: 'TA-35' },
-            { symbol: 'TASE:TA125', label: 'TA-125' },
-            { symbol: 'TASE:TEVA', label: 'Teva', yahoo: 'TEVA.TA' },
-            { symbol: 'TASE:LUMI', label: 'Bank Leumi', yahoo: 'LUMI.TA' },
+            { symbol: 'TASE:TA35', label: 'ת"א 35' },
+            { symbol: 'TASE:TA125', label: 'ת"א 125' },
+            { symbol: 'TASE:TEVA', label: 'טבע', yahoo: 'TEVA.TA' },
+            { symbol: 'TASE:LUMI', label: 'לאומי', yahoo: 'LUMI.TA' },
         ],
         groups: [
-            { title: 'Banks & finance', symbols: [['TASE:LUMI', 'Bank Leumi'], ['TASE:POLI', 'Bank Hapoalim'], ['TASE:DSCT', 'Discount Bank'], ['TASE:MZTF', 'Mizrahi Tefahot'], ['TASE:PHOE', 'Phoenix'], ['TASE:HARL', 'Harel']] },
-            { title: 'Technology & defence', symbols: [['TASE:NICE', 'NICE'], ['TASE:ESLT', 'Elbit Systems'], ['TASE:TSEM', 'Tower Semiconductor'], ['TASE:NVMI', 'Nova']] },
-            { title: 'Industry & real estate', symbols: [['TASE:TEVA', 'Teva'], ['TASE:ICL', 'ICL Group'], ['TASE:ORL', 'Bazan'], ['TASE:AZRG', 'Azrieli'], ['TASE:BEZQ', 'Bezeq'], ['TASE:ELAL', 'El Al']] },
+            { title: 'בנקים ופיננסים', symbols: [['TASE:LUMI', 'לאומי'], ['TASE:POLI', 'פועלים'], ['TASE:DSCT', 'דיסקונט'], ['TASE:MZTF', 'מזרחי טפחות'], ['TASE:PHOE', 'הפניקס'], ['TASE:HARL', 'הראל']] },
+            { title: 'טכנולוגיה וביטחוני', symbols: [['TASE:NICE', 'נייס'], ['TASE:ESLT', 'אלביט מערכות'], ['TASE:TSEM', 'טאואר'], ['TASE:NVMI', 'נובה']] },
+            { title: 'תעשייה ונדל"ן', symbols: [['TASE:TEVA', 'טבע'], ['TASE:ICL', 'כי"ל'], ['TASE:ORL', 'בזן'], ['TASE:AZRG', 'עזריאלי'], ['TASE:BEZQ', 'בזק'], ['TASE:ELAL', 'אל על']] },
         ],
         news: 'stock',
     },
     {
-        id: 'in', name: 'India', short: 'IN', timeZone: 'Asia/Kolkata', hours: { open: hm(9, 15), close: hm(15, 30) }, feed: 'End of day',
+        id: 'in', name: 'הודו', short: 'IN', timeZone: 'Asia/Kolkata', hours: { open: hm(9, 15), close: hm(15, 30) }, feed: 'End of day',
         pulse: [
             { symbol: 'BSE:SENSEX', label: 'Sensex' },
             { symbol: 'BSE:RELIANCE', label: 'Reliance' },
@@ -70,14 +70,14 @@ export const MARKETS: Market[] = [
             { symbol: 'BSE:HDFCBANK', label: 'HDFC Bank' },
         ],
         groups: [
-            { title: 'Banks', symbols: [['BSE:HDFCBANK', 'HDFC Bank'], ['BSE:ICICIBANK', 'ICICI Bank'], ['BSE:SBIN', 'State Bank of India'], ['BSE:KOTAKBANK', 'Kotak Mahindra'], ['BSE:AXISBANK', 'Axis Bank']] },
-            { title: 'Technology', symbols: [['BSE:TCS', 'TCS'], ['BSE:INFY', 'Infosys'], ['BSE:WIPRO', 'Wipro'], ['BSE:HCLTECH', 'HCLTech'], ['BSE:TECHM', 'Tech Mahindra']] },
-            { title: 'Industry', symbols: [['BSE:RELIANCE', 'Reliance'], ['BSE:LT', 'Larsen & Toubro'], ['BSE:ONGC', 'ONGC'], ['BSE:NTPC', 'NTPC'], ['BSE:TATASTEEL', 'Tata Steel']] },
+            { title: 'בנקים', symbols: [['BSE:HDFCBANK', 'HDFC Bank'], ['BSE:ICICIBANK', 'ICICI Bank'], ['BSE:SBIN', 'State Bank of India'], ['BSE:KOTAKBANK', 'Kotak Mahindra'], ['BSE:AXISBANK', 'Axis Bank']] },
+            { title: 'טכנולוגיה', symbols: [['BSE:TCS', 'TCS'], ['BSE:INFY', 'Infosys'], ['BSE:WIPRO', 'Wipro'], ['BSE:HCLTECH', 'HCLTech'], ['BSE:TECHM', 'Tech Mahindra']] },
+            { title: 'תעשייה', symbols: [['BSE:RELIANCE', 'Reliance'], ['BSE:LT', 'Larsen & Toubro'], ['BSE:ONGC', 'ONGC'], ['BSE:NTPC', 'NTPC'], ['BSE:TATASTEEL', 'Tata Steel']] },
         ],
         news: 'stock',
     },
     {
-        id: 'de', name: 'Germany', short: 'DE', timeZone: 'Europe/Berlin', hours: { open: hm(9), close: hm(17, 30) }, feed: 'End of day',
+        id: 'de', name: 'גרמניה', short: 'DE', timeZone: 'Europe/Berlin', hours: { open: hm(9), close: hm(17, 30) }, feed: 'End of day',
         pulse: [
             { symbol: 'XETR:SAP', label: 'SAP' },
             { symbol: 'XETR:SIE', label: 'Siemens' },
@@ -85,14 +85,14 @@ export const MARKETS: Market[] = [
             { symbol: 'XETR:DTE', label: 'Deutsche Telekom' },
         ],
         groups: [
-            { title: 'Industry', symbols: [['XETR:SIE', 'Siemens'], ['XETR:BAS', 'BASF'], ['XETR:BMW', 'BMW'], ['XETR:MBG', 'Mercedes-Benz'], ['XETR:VOW3', 'Volkswagen']] },
-            { title: 'Finance', symbols: [['XETR:ALV', 'Allianz'], ['XETR:MUV2', 'Munich Re'], ['XETR:DBK', 'Deutsche Bank'], ['XETR:CBK', 'Commerzbank']] },
-            { title: 'Technology', symbols: [['XETR:SAP', 'SAP'], ['XETR:IFX', 'Infineon'], ['XETR:DTE', 'Deutsche Telekom'], ['XETR:ADS', 'Adidas']] },
+            { title: 'תעשייה', symbols: [['XETR:SIE', 'Siemens'], ['XETR:BAS', 'BASF'], ['XETR:BMW', 'BMW'], ['XETR:MBG', 'Mercedes-Benz'], ['XETR:VOW3', 'Volkswagen']] },
+            { title: 'פיננסים', symbols: [['XETR:ALV', 'Allianz'], ['XETR:MUV2', 'Munich Re'], ['XETR:DBK', 'Deutsche Bank'], ['XETR:CBK', 'Commerzbank']] },
+            { title: 'טכנולוגיה', symbols: [['XETR:SAP', 'SAP'], ['XETR:IFX', 'Infineon'], ['XETR:DTE', 'Deutsche Telekom'], ['XETR:ADS', 'Adidas']] },
         ],
         news: 'stock',
     },
     {
-        id: 'ca', name: 'Canada', short: 'CA', timeZone: 'America/Toronto', hours: { open: hm(9, 30), close: hm(16) }, feed: 'Delayed',
+        id: 'ca', name: 'קנדה', short: 'CA', timeZone: 'America/Toronto', hours: { open: hm(9, 30), close: hm(16) }, feed: 'Delayed',
         pulse: [
             { symbol: 'TSX:RY', label: 'Royal Bank' },
             { symbol: 'TSX:SHOP', label: 'Shopify' },
@@ -100,14 +100,14 @@ export const MARKETS: Market[] = [
             { symbol: 'TSX:TD', label: 'TD Bank' },
         ],
         groups: [
-            { title: 'Banks', symbols: [['TSX:RY', 'Royal Bank'], ['TSX:TD', 'TD Bank'], ['TSX:BNS', 'Scotiabank'], ['TSX:BMO', 'Bank of Montreal']] },
-            { title: 'Energy', symbols: [['TSX:ENB', 'Enbridge'], ['TSX:CNQ', 'Canadian Natural'], ['TSX:SU', 'Suncor']] },
-            { title: 'Growth', symbols: [['TSX:SHOP', 'Shopify'], ['TSX:CNR', 'CN Rail'], ['TSX:CP', 'CPKC']] },
+            { title: 'בנקים', symbols: [['TSX:RY', 'Royal Bank'], ['TSX:TD', 'TD Bank'], ['TSX:BNS', 'Scotiabank'], ['TSX:BMO', 'Bank of Montreal']] },
+            { title: 'אנרגיה', symbols: [['TSX:ENB', 'Enbridge'], ['TSX:CNQ', 'Canadian Natural'], ['TSX:SU', 'Suncor']] },
+            { title: 'צמיחה', symbols: [['TSX:SHOP', 'Shopify'], ['TSX:CNR', 'CN Rail'], ['TSX:CP', 'CPKC']] },
         ],
         news: 'stock',
     },
     {
-        id: 'au', name: 'Australia', short: 'AU', timeZone: 'Australia/Sydney', hours: { open: hm(10), close: hm(16) }, feed: 'Delayed',
+        id: 'au', name: 'אוסטרליה', short: 'AU', timeZone: 'Australia/Sydney', hours: { open: hm(10), close: hm(16) }, feed: 'Delayed',
         pulse: [
             { symbol: 'ASX:CBA', label: 'CommBank' },
             { symbol: 'ASX:BHP', label: 'BHP' },
@@ -115,14 +115,14 @@ export const MARKETS: Market[] = [
             { symbol: 'ASX:NAB', label: 'NAB' },
         ],
         groups: [
-            { title: 'Banks', symbols: [['ASX:CBA', 'CommBank'], ['ASX:NAB', 'NAB'], ['ASX:WBC', 'Westpac'], ['ASX:ANZ', 'ANZ'], ['ASX:MQG', 'Macquarie']] },
-            { title: 'Resources', symbols: [['ASX:BHP', 'BHP'], ['ASX:FMG', 'Fortescue'], ['ASX:RIO', 'Rio Tinto']] },
-            { title: 'Consumer & health', symbols: [['ASX:CSL', 'CSL'], ['ASX:WES', 'Wesfarmers'], ['ASX:WOW', 'Woolworths']] },
+            { title: 'בנקים', symbols: [['ASX:CBA', 'CommBank'], ['ASX:NAB', 'NAB'], ['ASX:WBC', 'Westpac'], ['ASX:ANZ', 'ANZ'], ['ASX:MQG', 'Macquarie']] },
+            { title: 'משאבי טבע', symbols: [['ASX:BHP', 'BHP'], ['ASX:FMG', 'Fortescue'], ['ASX:RIO', 'Rio Tinto']] },
+            { title: 'צריכה ובריאות', symbols: [['ASX:CSL', 'CSL'], ['ASX:WES', 'Wesfarmers'], ['ASX:WOW', 'Woolworths']] },
         ],
         news: 'stock',
     },
     {
-        id: 'crypto', name: 'Crypto', short: 'Crypto', timeZone: 'UTC', hours: '24/7', feed: 'Live',
+        id: 'crypto', name: 'קריפטו', short: 'Crypto', timeZone: 'UTC', hours: '24/7', feed: 'Live',
         pulse: [
             { symbol: 'BINANCE:BTCUSDT', label: 'Bitcoin', finnhub: 'BINANCE:BTCUSDT' },
             { symbol: 'BINANCE:ETHUSDT', label: 'Ethereum', finnhub: 'BINANCE:ETHUSDT' },
@@ -130,13 +130,13 @@ export const MARKETS: Market[] = [
             { symbol: 'BINANCE:BNBUSDT', label: 'BNB', finnhub: 'BINANCE:BNBUSDT' },
         ],
         groups: [
-            { title: 'Majors', symbols: [['BINANCE:BTCUSDT', 'Bitcoin'], ['BINANCE:ETHUSDT', 'Ethereum'], ['BINANCE:SOLUSDT', 'Solana'], ['BINANCE:BNBUSDT', 'BNB'], ['BINANCE:XRPUSDT', 'XRP']] },
-            { title: 'More', symbols: [['BINANCE:ADAUSDT', 'Cardano'], ['BINANCE:DOGEUSDT', 'Dogecoin'], ['BINANCE:AVAXUSDT', 'Avalanche'], ['BINANCE:LINKUSDT', 'Chainlink'], ['BINANCE:DOTUSDT', 'Polkadot']] },
+            { title: 'המרכזיים', symbols: [['BINANCE:BTCUSDT', 'Bitcoin'], ['BINANCE:ETHUSDT', 'Ethereum'], ['BINANCE:SOLUSDT', 'Solana'], ['BINANCE:BNBUSDT', 'BNB'], ['BINANCE:XRPUSDT', 'XRP']] },
+            { title: 'עוד', symbols: [['BINANCE:ADAUSDT', 'Cardano'], ['BINANCE:DOGEUSDT', 'Dogecoin'], ['BINANCE:AVAXUSDT', 'Avalanche'], ['BINANCE:LINKUSDT', 'Chainlink'], ['BINANCE:DOTUSDT', 'Polkadot']] },
         ],
         heatmap: 'crypto', news: 'crypto',
     },
     {
-        id: 'fx', name: 'Forex', short: 'FX', timeZone: 'America/New_York', hours: '24/5', feed: 'Live',
+        id: 'fx', name: 'מט"ח', short: 'FX', timeZone: 'America/New_York', hours: '24/5', feed: 'Live',
         pulse: [
             { symbol: 'FX:EURUSD', label: 'EUR / USD' },
             { symbol: 'FX:GBPUSD', label: 'GBP / USD' },
@@ -144,8 +144,8 @@ export const MARKETS: Market[] = [
             { symbol: 'FX:AUDUSD', label: 'AUD / USD' },
         ],
         groups: [
-            { title: 'Majors', symbols: [['FX:EURUSD', 'EUR / USD'], ['FX:GBPUSD', 'GBP / USD'], ['FX:USDJPY', 'USD / JPY'], ['FX:USDCHF', 'USD / CHF']] },
-            { title: 'Commodity FX', symbols: [['FX:AUDUSD', 'AUD / USD'], ['FX:USDCAD', 'USD / CAD'], ['FX:NZDUSD', 'NZD / USD']] },
+            { title: 'המרכזיים', symbols: [['FX:EURUSD', 'EUR / USD'], ['FX:GBPUSD', 'GBP / USD'], ['FX:USDJPY', 'USD / JPY'], ['FX:USDCHF', 'USD / CHF']] },
+            { title: 'מטבעות סחורות', symbols: [['FX:AUDUSD', 'AUD / USD'], ['FX:USDCAD', 'USD / CAD'], ['FX:NZDUSD', 'NZD / USD']] },
         ],
         news: 'forex',
     },
@@ -193,3 +193,6 @@ export const hasQuotes = (symbol: string) => hasFinnhubQuotes(symbol) || hasYaho
 
 // The native pulse-tile symbol for a tile, whichever source prices it.
 export const pulseQuoteSymbol = (tile: Market['pulse'][number]) => tile.finnhub ?? tile.yahoo;
+
+// How each feed is described in Hebrew on screen; the English values above stay as the logic's keys.
+export const FEED_HE: Record<Market['feed'], string> = { Live: 'בזמן אמת', Delayed: 'בעיכוב', 'End of day': 'סוף יום' };

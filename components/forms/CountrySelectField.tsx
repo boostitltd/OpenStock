@@ -26,10 +26,13 @@ const COUNTRY_LABEL_OVERRIDES: Record<string, string> = {
     TW: 'Taiwan',
 };
 
+// Country names in Hebrew from the browser's own data; the English list stays as the fallback
+const HEBREW_REGIONS = (() => { try { return new Intl.DisplayNames(['he'], { type: 'region' }); } catch { return null; } })();
+
 const COUNTRY_OPTIONS = countryList().getData().map((country) => ({
     ...country,
-    label: COUNTRY_LABEL_OVERRIDES[country.value] ?? country.label,
-}));
+    label: HEBREW_REGIONS?.of(country.value) ?? COUNTRY_LABEL_OVERRIDES[country.value] ?? country.label,
+})).sort((a, b) => (a.value === 'IL' ? -1 : b.value === 'IL' ? 1 : a.label.localeCompare(b.label, 'he')));
 
 type CountrySelectProps = {
     name: string;
@@ -83,11 +86,11 @@ const CountrySelect = ({
             >
                 <Command className='bg-gray-800 border-gray-600'>
                     <CommandInput
-                        placeholder='Search countries...'
+                        placeholder='חיפוש מדינה…'
                         className='country-select-input'
                     />
                     <CommandEmpty className='country-select-empty'>
-                        No country found.
+                        לא נמצאה מדינה.
                     </CommandEmpty>
                     <CommandList className='max-h-60 bg-gray-800 scrollbar-hide-default'>
                         <CommandGroup className='bg-gray-800'>
@@ -137,7 +140,7 @@ export const CountrySelectField = ({
                 name={name}
                 control={control}
                 rules={{
-                    required: required ? `Please select ${label.toLowerCase()}` : false,
+                    required: required ? `צריך לבחור ${label}` : false,
                 }}
                 render={({ field }) => (
                     <CountrySelect value={field.value} onChange={field.onChange} />

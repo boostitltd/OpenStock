@@ -6,8 +6,9 @@ import ChangePill from "@/components/ChangePill";
 import AddTradeModal from "@/components/portfolio/AddTradeModal";
 import { formatPrice } from "@/lib/utils";
 import type { Currency, Holding } from "@/lib/portfolio";
+import { hebrewName } from "@/lib/universe";
 
-const money = (v: number, c: Currency) => new Intl.NumberFormat('en-US', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(v);
+import { money } from "@/lib/format";
 const signed = (v: number, c: Currency) => `${v > 0 ? '+' : ''}${money(v, c)}`;
 
 export default function HoldingsTable({ holdings, base }: { holdings: Holding[]; base: Currency }) {
@@ -17,9 +18,9 @@ export default function HoldingsTable({ holdings, base }: { holdings: Holding[];
         return (
             <div className="empty-state">
                 <span className="empty-icon"><Briefcase className="size-5" /></span>
-                <h3>No positions yet</h3>
-                <p className="max-w-sm">Record what you already hold, one buy at a time, with the reason and the target for each.</p>
-                <AddTradeModal><button type="button" className="btn btn-primary mt-3"><PlusCircle /> Record a buy</button></AddTradeModal>
+                <h3>עוד אין מניות בתיק</h3>
+                <p className="max-w-sm">רשמו את מה שכבר יש לכם, קנייה אחרי קנייה, עם הסיבה והיעד לכל אחת.</p>
+                <AddTradeModal><button type="button" className="btn btn-primary mt-3"><PlusCircle /> רישום קנייה</button></AddTradeModal>
             </div>
         );
     }
@@ -29,15 +30,15 @@ export default function HoldingsTable({ holdings, base }: { holdings: Holding[];
             <table className="data-table">
                 <thead>
                     <tr>
-                        <th>Position</th>
-                        <th className="is-num">Shares</th>
-                        <th className="is-num">Avg cost</th>
-                        <th className="is-num">Price</th>
-                        <th className="is-num">Value</th>
-                        <th className="is-num">P&amp;L</th>
-                        <th className="is-num">Weight</th>
-                        <th className="is-num">To target</th>
-                        <th className="w-[80px]"><span className="sr-only">Actions</span></th>
+                        <th>מניה</th>
+                        <th className="is-num">כמות</th>
+                        <th className="is-num">מחיר קנייה ממוצע</th>
+                        <th className="is-num">מחיר</th>
+                        <th className="is-num">שווי</th>
+                        <th className="is-num">רווח והפסד</th>
+                        <th className="is-num">משקל</th>
+                        <th className="is-num">עד היעד</th>
+                        <th className="w-[80px]"><span className="sr-only">פעולות</span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -45,8 +46,8 @@ export default function HoldingsTable({ holdings, base }: { holdings: Holding[];
                         <tr key={h.symbol}>
                             <td>
                                 <Link href={`/stocks/${encodeURIComponent(h.symbol)}`} className="group flex w-[260px] max-w-[260px] flex-col">
-                                    <span className="truncate font-semibold text-foreground transition-colors group-hover:text-brand-ink" title={h.name}>{h.name}</span>
-                                    <span className="truncate text-[12px] text-faint" title={h.thesis}><span className="mono">{h.symbol}</span>{h.thesis ? ` · ${h.thesis}` : ''}</span>
+                                    <span className="truncate font-semibold text-foreground transition-colors group-hover:text-brand-ink" title={h.name}>{hebrewName(h.symbol, h.name)}</span>
+                                    <span className="truncate text-[12px] text-faint" title={h.thesis}><span dir="ltr" className="mono">{h.symbol}</span>{h.thesis ? ` · ${h.thesis}` : ''}</span>
                                 </Link>
                             </td>
                             <td className="is-num text-muted-foreground">{h.quantity}</td>
@@ -62,20 +63,20 @@ export default function HoldingsTable({ holdings, base }: { holdings: Holding[];
                             <td className="is-num text-muted-foreground">{h.weightPct.toFixed(1)}%</td>
                             <td className="is-num">
                                 {h.targetPrice === null ? (
-                                    <span className="pill" title="No target on the last buy">no target</span>
+                                    <span className="pill" title="לקנייה האחרונה אין יעד">אין יעד</span>
                                 ) : h.targetReached ? (
-                                    <span className="pill is-brand" title={`Target ${formatPrice(h.targetPrice, h.currency)} reached`}>reached</span>
+                                    <span className="pill is-brand" title={`היעד ${formatPrice(h.targetPrice, h.currency)} הושג`}>הגיעה ליעד</span>
                                 ) : (
-                                    <span className="text-muted-foreground" title={`Target ${formatPrice(h.targetPrice, h.currency)}`}>+{h.targetDistancePct?.toFixed(1)}%</span>
+                                    <span className="text-muted-foreground" title={`יעד ${formatPrice(h.targetPrice, h.currency)}`}>+{h.targetDistancePct?.toFixed(1)}%</span>
                                 )}
                             </td>
                             <td>
                                 <div className="flex items-center justify-end gap-1">
                                     <AddTradeModal symbol={h.symbol} side="BUY" currentPrice={h.price}>
-                                        <button type="button" className="icon-btn" title={`Buy more ${h.symbol}`} aria-label={`Buy more ${h.symbol}`}><PlusCircle /></button>
+                                        <button type="button" className="icon-btn" title={`לקנות עוד ${h.name}`} aria-label={`לקנות עוד ${h.name}`}><PlusCircle /></button>
                                     </AddTradeModal>
                                     <AddTradeModal symbol={h.symbol} side="SELL" heldQuantity={h.quantity} currentPrice={h.price}>
-                                        <button type="button" className="icon-btn" title={`Sell ${h.symbol}`} aria-label={`Sell ${h.symbol}`}><MinusCircle /></button>
+                                        <button type="button" className="icon-btn" title={`למכור ${h.name}`} aria-label={`למכור ${h.name}`}><MinusCircle /></button>
                                     </AddTradeModal>
                                 </div>
                             </td>

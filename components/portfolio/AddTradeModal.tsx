@@ -57,18 +57,19 @@ export default function AddTradeModal({ children, symbol: initialSymbol = '', si
         e.preventDefault();
         setLoading(true);
         try {
-            await addTrade({
+            const result = await addTrade({
                 symbol: sym, side, quantity: qty, price: px, currency, fees: parseFloat(fees) || 0, tradedAt,
                 targetPrice: side === 'BUY' && targetMode === 'price' ? parseFloat(target) : null,
                 targetReturnPct: side === 'BUY' && targetMode === 'return' ? parseFloat(target) : null,
                 thesis, note,
             });
-            toast.success(`${side === 'BUY' ? 'Bought' : 'Sold'} ${qty} ${sym}`);
+            if (!result.ok) { toast.error(result.error); return; }
+            toast.success(`${side === 'BUY' ? 'נרשמה קנייה של' : 'נרשמה מכירה של'} ${qty} ${sym}`);
             setOpen(false);
             setQuantity(''); setFees(''); setTarget(''); setThesis(''); setNote('');
             router.refresh();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Couldn't record the trade");
+            toast.error(error instanceof Error ? error.message : "לא הצלחנו לרשום את העסקה");
         } finally {
             setLoading(false);
         }
@@ -82,61 +83,61 @@ export default function AddTradeModal({ children, symbol: initialSymbol = '', si
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-[480px] gap-5">
                 <div>
-                    <p className="kicker text-brand-ink">Record a trade</p>
-                    <DialogTitle className="mt-1 text-xl font-bold tracking-tight">{side === 'BUY' ? 'What did you buy, and why?' : 'What did you sell?'}</DialogTitle>
+                    <p className="kicker text-brand-ink">רישום עסקה</p>
+                    <DialogTitle className="mt-1 text-xl font-bold tracking-tight">{side === 'BUY' ? 'מה קנית, ולמה?' : 'מה מכרת?'}</DialogTitle>
                     <DialogDescription className="mt-1 text-[13px] text-faint">
-                        {side === 'BUY' ? 'Every buy needs a reason and a finish line. The monthly review checks both.' : 'Sold shares leave the oldest lots first (FIFO).'}
+                        {side === 'BUY' ? 'לכל קנייה צריך סיבה וקו סיום. הסיכום השבועי בודק את שניהם.' : 'המכירה יוצאת קודם מהקניות הוותיקות ביותר (FIFO).'}
                     </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="grid grid-cols-2 gap-1 rounded-[12px] bg-page p-1" role="radiogroup" aria-label="Side">
+                    <div className="grid grid-cols-2 gap-1 rounded-[12px] bg-page p-1" role="radiogroup" aria-label="סוג העסקה">
                         {(['BUY', 'SELL'] as const).map((value) => (
                             <button key={value} type="button" role="radio" aria-checked={side === value} onClick={() => setSide(value)}
                                 className={cn('h-9 rounded-[9px] font-semibold transition-colors', side === value ? 'bg-hover text-foreground shadow-[inset_0_1px_0_oklch(1_0_0/0.06)]' : 'text-faint hover:text-foreground')}>
-                                {value === 'BUY' ? 'Buy' : 'Sell'}
+                                {value === 'BUY' ? 'קנייה' : 'מכירה'}
                             </button>
                         ))}
                     </div>
 
                     <div className="grid grid-cols-[1fr_120px] gap-3">
                         <label className="flex flex-col gap-1.5">
-                            <span className="form-label">Symbol</span>
+                            <span className="form-label">מניה</span>
                             <span className={field}>
-                                <SymbolPicker value={symbol} onChange={setSymbol} autoFocus={!initialSymbol} placeholder="Company name or symbol" className="min-w-0 flex-1" inputClassName={input} />
-                                {sym && <span className="mono text-xs text-faint" title={currency === 'ILS' ? 'Tel Aviv listing, priced in shekels' : 'Priced in dollars'}>{currency}</span>}
+                                <SymbolPicker value={symbol} onChange={setSymbol} autoFocus={!initialSymbol} placeholder="שם החברה או סימול" className="min-w-0 flex-1" inputClassName={input} />
+                                {sym && <span className="text-xs text-faint" title={currency === 'ILS' ? 'רשומה בתל אביב, בשקלים' : 'בדולרים'}>{currency === 'ILS' ? '₪' : '$'}</span>}
                             </span>
                         </label>
                         <label className="flex flex-col gap-1.5">
-                            <span className="form-label">Date</span>
+                            <span className="form-label">תאריך</span>
                             <span className={field}><input type="date" value={tradedAt} max={today()} onChange={(e) => setTradedAt(e.target.value)} required className={input} /></span>
                         </label>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
                         <label className="flex flex-col gap-1.5">
-                            <span className="form-label">Shares</span>
+                            <span className="form-label">כמות</span>
                             <span className={field}><input type="number" inputMode="decimal" step="any" min="0" required value={quantity} onChange={(e) => setQuantity(e.target.value)} className={input} /></span>
-                            {side === 'SELL' && heldQuantity != null && <span className="num text-[12px] text-faint">You hold {heldQuantity}</span>}
+                            {side === 'SELL' && heldQuantity != null && <span className="num text-[12px] text-faint">יש לך {heldQuantity}</span>}
                         </label>
                         <label className="flex flex-col gap-1.5">
-                            <span className="form-label">Price / share</span>
+                            <span className="form-label">מחיר למניה</span>
                             <span className={field}><input type="number" inputMode="decimal" step="any" min="0" required value={price} onChange={(e) => setPrice(e.target.value)} className={input} /></span>
                         </label>
                         <label className="flex flex-col gap-1.5">
-                            <span className="form-label">Fees</span>
+                            <span className="form-label">עמלה</span>
                             <span className={field}><input type="number" inputMode="decimal" step="any" min="0" value={fees} onChange={(e) => setFees(e.target.value)} placeholder="0" className={input} /></span>
                         </label>
                     </div>
-                    {total !== null && <p className="num -mt-2 text-[12.5px] text-faint">Total {new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(total)}</p>}
+                    {total !== null && <p className="num -mt-2 text-[12.5px] text-faint">סה&quot;כ {new Intl.NumberFormat('he-IL', { style: 'currency', currency }).format(total)}</p>}
 
                     {side === 'BUY' && (
                         <>
                             <div className="flex flex-col gap-1.5">
-                                <span className="form-label">Done when</span>
+                                <span className="form-label">מתי היא סיימה את תפקידה</span>
                                 <div className="grid grid-cols-[150px_1fr] gap-2">
-                                    <div className="grid grid-cols-2 gap-1 rounded-[11px] bg-page p-1" role="radiogroup" aria-label="Target type">
-                                        {([['return', '+ %'], ['price', 'Price']] as const).map(([value, label]) => (
+                                    <div className="grid grid-cols-2 gap-1 rounded-[11px] bg-page p-1" role="radiogroup" aria-label="סוג היעד">
+                                        {([['return', '+ %'], ['price', 'מחיר']] as const).map(([value, label]) => (
                                             <button key={value} type="button" role="radio" aria-checked={targetMode === value} onClick={() => setTargetMode(value)}
                                                 className={cn('h-9 rounded-[8px] text-[13px] font-semibold transition-colors', targetMode === value ? 'bg-hover text-foreground' : 'text-faint hover:text-foreground')}>
                                                 {label}
@@ -145,17 +146,17 @@ export default function AddTradeModal({ children, symbol: initialSymbol = '', si
                                     </div>
                                     <span className={field}>
                                         <input type="number" inputMode="decimal" step="any" required value={target} onChange={(e) => setTarget(e.target.value)}
-                                            placeholder={targetMode === 'return' ? 'e.g. 30' : 'target price'} className={input} />
-                                        <span className="mono text-xs text-faint">{targetMode === 'return' ? '%' : currency}</span>
+                                            placeholder={targetMode === 'return' ? 'למשל 30' : 'מחיר יעד'} className={input} />
+                                        <span className="text-xs text-faint">{targetMode === 'return' ? '%' : currency === 'ILS' ? '₪' : '$'}</span>
                                     </span>
                                 </div>
-                                {impliedTarget !== null && <span className="num text-[12px] text-faint">Sell candidate at {new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(impliedTarget)}</span>}
+                                {impliedTarget !== null && <span className="num text-[12px] text-faint">מועמדת למכירה ב-{new Intl.NumberFormat('he-IL', { style: 'currency', currency }).format(impliedTarget)}</span>}
                             </div>
 
                             <label className="flex flex-col gap-1.5">
-                                <span className="form-label">Why (one sentence)</span>
+                                <span className="form-label">למה (משפט אחד)</span>
                                 <textarea value={thesis} onChange={(e) => setThesis(e.target.value)} required maxLength={500} rows={2}
-                                    placeholder="What has to stay true for this to work?"
+                                    placeholder="מה צריך להישאר נכון כדי שזה יעבוד?"
                                     className="w-full resize-none rounded-[11px] border border-line bg-page px-3 py-2.5 text-[14px] text-foreground outline-none placeholder:text-faint focus:border-brand" />
                             </label>
                         </>
@@ -163,14 +164,14 @@ export default function AddTradeModal({ children, symbol: initialSymbol = '', si
 
                     {side === 'SELL' && (
                         <label className="flex flex-col gap-1.5">
-                            <span className="form-label">Note (optional)</span>
-                            <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} placeholder="Target reached, thesis broke, rebalance..."
+                            <span className="form-label">הערה (לא חובה)</span>
+                            <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} placeholder="הגיעה ליעד, הסיבה כבר לא נכונה, איזון..."
                                 className="h-11 w-full rounded-[11px] border border-line bg-page px-3 text-[14px] text-foreground outline-none placeholder:text-faint focus:border-brand" />
                         </label>
                     )}
 
                     <button type="submit" disabled={loading || !sym || !(qty > 0) || !(px > 0)} className="btn btn-primary h-11">
-                        {loading ? 'Saving' : side === 'BUY' ? 'Record buy' : 'Record sale'}
+                        {loading ? 'שומרים' : side === 'BUY' ? 'לרשום קנייה' : 'לרשום מכירה'}
                     </button>
                 </form>
             </DialogContent>

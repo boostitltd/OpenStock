@@ -19,26 +19,26 @@ const asNumber = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? NaN
 
 // ---- Trades --------------------------------------------------------------------------------
 
-export async function addTrade(input: {
+async function addTradeOrThrow(input: {
     symbol: string; side: 'BUY' | 'SELL'; quantity: number; price: number; currency?: Currency; fees?: number;
     tradedAt: string; targetPrice?: number | null; targetReturnPct?: number | null; thesis?: string; note?: string;
 }) {
     const userId = await requireUserId();
     const symbol = String(input.symbol ?? '').trim().toUpperCase();
-    if (!SYMBOL_PATTERN.test(symbol)) throw new Error('Invalid symbol');
+    if (!SYMBOL_PATTERN.test(symbol)) throw new Error('הסימול לא תקין. בחרו מניה מהרשימה');
     const side = input.side === 'SELL' ? 'SELL' : input.side === 'BUY' ? 'BUY' : null;
-    if (!side) throw new Error('Side must be BUY or SELL');
+    if (!side) throw new Error('סוג העסקה צריך להיות קנייה או מכירה');
     const quantity = asNumber(input.quantity);
     const price = asNumber(input.price);
     const fees = input.fees == null ? 0 : asNumber(input.fees);
-    if (!Number.isFinite(quantity) || quantity <= 0) throw new Error('Quantity must be a positive number');
-    if (!Number.isFinite(price) || price <= 0) throw new Error('Price must be a positive number');
-    if (!Number.isFinite(fees) || fees < 0) throw new Error('Fees must be zero or more');
+    if (!Number.isFinite(quantity) || quantity <= 0) throw new Error('הכמות צריכה להיות מספר חיובי');
+    if (!Number.isFinite(price) || price <= 0) throw new Error('המחיר צריך להיות מספר חיובי');
+    if (!Number.isFinite(fees) || fees < 0) throw new Error('העמלה צריכה להיות אפס או יותר');
     const currency = (input.currency ?? symbolCurrency(symbol)) as Currency;
-    if (!CURRENCIES.includes(currency)) throw new Error('Currency must be ILS or USD');
+    if (!CURRENCIES.includes(currency)) throw new Error('המטבע צריך להיות שקל או דולר');
     const tradedAt = new Date(input.tradedAt);
-    if (Number.isNaN(tradedAt.getTime())) throw new Error('Invalid trade date');
-    if (tradedAt.getTime() > Date.now() + 24 * 3600 * 1000) throw new Error('Trade date is in the future');
+    if (Number.isNaN(tradedAt.getTime())) throw new Error('התאריך לא תקין');
+    if (tradedAt.getTime() > Date.now() + 24 * 3600 * 1000) throw new Error('התאריך בעתיד');
 
     let targetPrice: number | null = null;
     let targetReturnPct: number | null = null;
@@ -46,24 +46,24 @@ export async function addTrade(input: {
     if (side === 'BUY') {
         if (input.targetPrice != null && String(input.targetPrice) !== '') {
             targetPrice = asNumber(input.targetPrice);
-            if (!Number.isFinite(targetPrice) || targetPrice <= 0) throw new Error('Target price must be a positive number');
+            if (!Number.isFinite(targetPrice) || targetPrice <= 0) throw new Error('מחיר היעד צריך להיות מספר חיובי');
         }
         if (input.targetReturnPct != null && String(input.targetReturnPct) !== '') {
             targetReturnPct = asNumber(input.targetReturnPct);
-            if (!Number.isFinite(targetReturnPct) || targetReturnPct <= -100 || targetReturnPct > 10000) throw new Error('Target return must be a percentage above -100');
+            if (!Number.isFinite(targetReturnPct) || targetReturnPct <= -100 || targetReturnPct > 10000) throw new Error('תשואת היעד צריכה להיות אחוז גבוה מ-100-');
         }
         thesis = String(input.thesis ?? '').trim().slice(0, 500);
         // A buy without a reason is the habit this screen exists to break
-        if (!thesis) throw new Error('Write one sentence on why you are buying');
-        if (targetPrice === null && targetReturnPct === null) throw new Error('Set a target price or a target return, so the review knows when this one is done');
+        if (!thesis) throw new Error('כתבו משפט אחד: למה קונים');
+        if (targetPrice === null && targetReturnPct === null) throw new Error('קבעו מחיר יעד או תשואת יעד, כדי שהמערכת תדע מתי המניה סיימה את תפקידה');
     }
     const note = String(input.note ?? '').trim().slice(0, 500);
 
     await connectToDatabase();
-    if ((await Trade.countDocuments({ userId })) >= MAX_TRADES) throw new Error(`You can record up to ${MAX_TRADES} trades`);
+    if ((await Trade.countDocuments({ userId })) >= MAX_TRADES) throw new Error(`אפשר לרשום עד ${MAX_TRADES} עסקאות`);
     if (side === 'SELL') {
         const held = await heldQuantity(userId, symbol);
-        if (quantity > held + 1e-9) throw new Error(`You hold ${held} ${symbol}; you can't sell ${quantity}`);
+        if (quantity > held + 1e-9) throw new Error(`יש לך ${held} מניות ${symbol}, אז אי אפשר למכור ${quantity}`);
     }
 
     const created = await Trade.create({ userId, symbol, side, quantity, price, currency, fees, tradedAt, targetPrice, targetReturnPct, thesis, note });
@@ -94,38 +94,38 @@ export async function getPortfolioSettings(): Promise<PortfolioSettingsRow> {
     return loadSettings(await requireUserId());
 }
 
-export async function savePortfolioSettings(input: Partial<PortfolioSettingsRow>) {
+async function saveSettingsOrThrow(input: Partial<PortfolioSettingsRow>) {
     const userId = await requireUserId();
     const update: Partial<PortfolioSettingsRow> = {};
     if (input.baseCurrency !== undefined) {
-        if (!CURRENCIES.includes(input.baseCurrency)) throw new Error('Currency must be ILS or USD');
+        if (!CURRENCIES.includes(input.baseCurrency)) throw new Error('המטבע צריך להיות שקל או דולר');
         update.baseCurrency = input.baseCurrency;
     }
     if (input.monthlyBudget !== undefined) {
         const budget = asNumber(input.monthlyBudget);
-        if (!Number.isFinite(budget) || budget < 0) throw new Error('Monthly budget must be zero or more');
+        if (!Number.isFinite(budget) || budget < 0) throw new Error('הסכום החודשי צריך להיות אפס או יותר');
         update.monthlyBudget = budget;
     }
     if (input.driftTolerancePct !== undefined) {
         const tol = asNumber(input.driftTolerancePct);
-        if (!Number.isFinite(tol) || tol < 0 || tol > 50) throw new Error('Drift tolerance must be between 0 and 50');
+        if (!Number.isFinite(tol) || tol < 0 || tol > 50) throw new Error('הסטייה המותרת צריכה להיות בין 0 ל-50');
         update.driftTolerancePct = tol;
     }
     if (input.targets !== undefined) {
-        if (!Array.isArray(input.targets) || input.targets.length > MAX_TARGETS) throw new Error(`Up to ${MAX_TARGETS} targets`);
+        if (!Array.isArray(input.targets) || input.targets.length > MAX_TARGETS) throw new Error(`עד ${MAX_TARGETS} יעדים`);
         const seen = new Set<string>();
         const targets: Target[] = [];
         for (const t of input.targets) {
             const symbol = String(t?.symbol ?? '').trim().toUpperCase();
             const weightPct = asNumber(t?.weightPct);
-            if (!SYMBOL_PATTERN.test(symbol)) throw new Error(`Invalid symbol: ${symbol || '(empty)'}`);
-            if (!Number.isFinite(weightPct) || weightPct < 0 || weightPct > 100) throw new Error(`Weight for ${symbol} must be between 0 and 100`);
-            if (seen.has(symbol)) throw new Error(`${symbol} appears twice`);
+            if (!SYMBOL_PATTERN.test(symbol)) throw new Error(`סימול לא תקין: ${symbol || '(ריק)'}`);
+            if (!Number.isFinite(weightPct) || weightPct < 0 || weightPct > 100) throw new Error(`המשקל של ${symbol} צריך להיות בין 0 ל-100`);
+            if (seen.has(symbol)) throw new Error(`${symbol} מופיעה פעמיים`);
             seen.add(symbol);
             targets.push({ symbol, weightPct: Math.round(weightPct * 100) / 100 });
         }
         const sum = targets.reduce((s, t) => s + t.weightPct, 0);
-        if (sum > 100.001) throw new Error(`Target weights add up to ${sum.toFixed(1)}%; the most is 100%`);
+        if (sum > 100.001) throw new Error(`משקלי היעד מסתכמים ב-${sum.toFixed(1)}%, והמקסימום הוא 100%`);
         update.targets = targets;
     }
 
@@ -146,4 +146,25 @@ export async function getBuyDayPlan(budgetOverride?: number) {
     const { portfolio, settings, fxLive, quotes } = await getPortfolio();
     const budget = budgetOverride !== undefined && Number.isFinite(budgetOverride) && budgetOverride >= 0 ? budgetOverride : settings.monthlyBudget;
     return { plan: planBuyDay(portfolio, settings.targets, budget, settings.driftTolerancePct, quotes), portfolio, settings, fxLive };
+}
+
+// Next.js replaces a thrown server-action error with a generic message in production, so the reason a form
+// was refused ("write one sentence on why") would never reach the person. The exported actions return it.
+export type ActionResult<T = undefined> = { ok: true; value: T } | { ok: false; error: string };
+
+const asResult = async <T,>(run: () => Promise<T>): Promise<ActionResult<T>> => {
+    try {
+        return { ok: true, value: await run() };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : '';
+        return { ok: false, error: message === 'Unauthorized' ? 'צריך להתחבר מחדש' : message || 'משהו השתבש' };
+    }
+};
+
+export async function addTrade(input: Parameters<typeof addTradeOrThrow>[0]): Promise<ActionResult<TradeRow>> {
+    return asResult(() => addTradeOrThrow(input));
+}
+
+export async function savePortfolioSettings(input: Partial<PortfolioSettingsRow>): Promise<ActionResult<{ success: boolean }>> {
+    return asResult(() => saveSettingsOrThrow(input));
 }

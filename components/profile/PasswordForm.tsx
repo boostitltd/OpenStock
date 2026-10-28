@@ -18,10 +18,10 @@ export default function PasswordForm() {
     const onSubmit = async (values: PasswordInput) => {
         const result = await changePassword(values);
         if (!result.success) {
-            toast.error('Password not changed', { description: result.error });
+            toast.error('הסיסמה לא שונתה', { description: result.error });
             return;
         }
-        toast.success('Password changed', { description: 'Other devices were signed out.' });
+        toast.success('הסיסמה שונתה', { description: 'המכשירים האחרים נותקו.' });
         reset();
     };
 
@@ -29,18 +29,18 @@ export default function PasswordForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 p-4">
             <InputField
                 name="currentPassword"
-                label="Current password"
-                placeholder="Your current password"
+                label="הסיסמה הנוכחית"
+                placeholder="הסיסמה הנוכחית שלך"
                 type="password"
                 register={register}
                 error={errors.currentPassword}
-                validation={{ required: 'Enter your current password' }}
+                validation={{ required: 'צריך למלא את הסיסמה הנוכחית' }}
             />
             <div className="flex flex-col gap-2">
                 <InputField
                     name="newPassword"
-                    label="New password"
-                    placeholder="At least 8 characters"
+                    label="סיסמה חדשה"
+                    placeholder="לפחות 8 תווים"
                     type="password"
                     register={register}
                     error={errors.newPassword}
@@ -49,7 +49,7 @@ export default function PasswordForm() {
                 <PasswordRequirements password={watch('newPassword') ?? ''} />
             </div>
             <button type="submit" disabled={isSubmitting} className="btn btn-ghost self-start">
-                {isSubmitting ? 'Changing' : 'Change password'}
+                {isSubmitting ? 'משנים' : 'לשנות סיסמה'}
             </button>
         </form>
     );

@@ -10,6 +10,10 @@ import { useDebounce } from "@/hooks/useDebounce";
 const OPEN_SEARCH_EVENT = 'open-search';
 
 // Any button can open the one palette mounted in the app shell.
+// Finnhub labels, shown in Hebrew
+const EXCHANGE_HE: Record<string, string> = { TA: 'ת"א', US: 'ארה"ב' };
+const TYPE_HE: Record<string, string> = { 'Common Stock': 'מניה', Stock: 'מניה', ETP: 'קרן סל', ETF: 'קרן סל', ADR: 'ADR', REIT: 'קרן ריט' };
+
 export const openSearch = () => window.dispatchEvent(new Event(OPEN_SEARCH_EVENT));
 
 export const SearchButton = ({ children, className }: { children: React.ReactNode; className?: string }) => (
@@ -75,21 +79,20 @@ export default function SearchCommand({ initialStocks }: { initialStocks: StockW
     return (
         <CommandDialog open={open} onOpenChange={setOpen} className="search-dialog">
             <div className="search-field">
-                <CommandInput value={searchTerm} onValueChange={setSearchTerm} placeholder="Search by company or symbol" className="search-input" />
+                <CommandInput value={searchTerm} onValueChange={setSearchTerm} placeholder="חיפוש לפי שם חברה או סימול, גם בעברית" className="search-input" />
                 {loading && <Loader2 className="search-loader" />}
             </div>
             <CommandList className="search-list">
                 {loading ? (
-                    <CommandEmpty className="search-list-empty">Searching</CommandEmpty>
+                    <CommandEmpty className="search-list-empty">מחפשים…</CommandEmpty>
                 ) : displayStocks?.length === 0 ? (
                     <div className="search-list-indicator">
-                        {isSearchMode ? `Nothing matches “${searchTerm.trim()}”` : 'No stocks available'}
+                        {isSearchMode ? `לא נמצא כלום עבור "${searchTerm.trim()}"` : 'אין מניות להצגה'}
                     </div>
                 ) : (
                     <ul>
                         <li className="search-count">
-                            {isSearchMode ? 'Results' : 'Popular'}
-                            <span className="num"> · {displayStocks?.length || 0}</span>
+                            {isSearchMode ? 'תוצאות' : 'פופולריות'} · {displayStocks?.length || 0}
                         </li>
                         {displayStocks?.map((stock) => (
                             <li key={stock.symbol} className="search-item">
@@ -98,9 +101,9 @@ export default function SearchCommand({ initialStocks }: { initialStocks: StockW
                                     onClick={handleSelectStock}
                                     className="search-item-link group"
                                 >
-                                    <span className="mono w-20 shrink-0 text-[13px] font-semibold text-brand-ink truncate">{stock.symbol}</span>
+                                    <span dir="ltr" className="mono w-20 shrink-0 truncate text-start text-[13px] font-semibold text-brand-ink">{stock.symbol}</span>
                                     <span className="search-item-name flex-1">{stock.name}</span>
-                                    <span className="hidden sm:block text-xs text-faint truncate max-w-40">{[stock.exchange, stock.type].filter(Boolean).join(' · ')}</span>
+                                    <span className="hidden sm:block text-xs text-faint truncate max-w-40">{[EXCHANGE_HE[stock.exchange] ?? stock.exchange, TYPE_HE[stock.type] ?? stock.type].filter(Boolean).join(' · ')}</span>
                                     <ArrowUpRight className="size-4 text-faint opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </Link>
                             </li>

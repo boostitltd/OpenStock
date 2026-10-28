@@ -69,10 +69,10 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="absolute top-4 right-4 grid size-8 place-items-center rounded-full text-faint transition-[background-color,color,transform] hover:bg-hover hover:text-foreground active:scale-94 focus-visible:ring-2 focus-visible:ring-ring focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            className="absolute top-4 end-4 grid size-8 place-items-center rounded-full text-faint transition-[background-color,color,transform] hover:bg-hover hover:text-foreground active:scale-94 focus-visible:ring-2 focus-visible:ring-ring focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">סגירה</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>

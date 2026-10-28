@@ -41,29 +41,29 @@ export default async function WatchlistPage() {
         <>
             <header className="page-head">
                 <div>
-                    <h1 className="page-title">Watchlist</h1>
+                    <h1 className="page-title">רשימת מעקב</h1>
                     <p className="page-sub num flex flex-wrap items-center gap-x-2">
-                        {symbols.length} {symbols.length === 1 ? 'symbol' : 'symbols'} <span aria-hidden>·</span> <DataFreshness />
+                        {symbols.length === 1 ? 'מניה אחת' : `${symbols.length} מניות`} <span aria-hidden>·</span> <DataFreshness />
                     </p>
                 </div>
-                <SearchButton className="btn btn-primary"><Plus /> Add symbol</SearchButton>
+                <SearchButton className="btn btn-primary"><Plus /> הוספת מניה</SearchButton>
             </header>
 
             <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
                 <div className="flex min-w-0 flex-col gap-3">
-                    <Panel title="Symbols" sub="Click a row for charts, technicals and financials">
+                    <Panel title="המניות" sub="לחיצה על שורה פותחת גרפים, ניתוח טכני ודוחות">
                         <Suspense fallback={<RowsSkeleton rows={Math.max(1, Math.min(symbols.length, 6))} />}>
                             <Symbols symbols={symbols} />
                         </Suspense>
                     </Panel>
-                    <Panel title="News" sub={symbols.length ? 'Latest stories for the symbols you watch' : 'General market news'}>
+                    <Panel title="חדשות" sub={symbols.length ? 'החדשות האחרונות על המניות שלך' : 'חדשות שוק כלליות'}>
                         <Suspense fallback={<RowsSkeleton />}>
                             <News symbols={symbols} />
                         </Suspense>
                     </Panel>
                 </div>
 
-                <Panel title="Alerts" sub={alertsEnabled ? `${activeAlerts} active · checked every 5 minutes` : 'An OpenStock Cloud feature'} className="self-start">
+                <Panel title="התראות" sub={alertsEnabled ? `${activeAlerts} פעילות · נבדקות כל 5 דקות` : 'חלק מ-OpenStock Cloud'} className="self-start">
                     <AlertsPanel alerts={alerts} />
                 </Panel>
             </div>

@@ -117,17 +117,17 @@ describe('planBuyDay', () => {
         const plan = planBuyDay(portfolio(), [{ symbol: 'LUMI.TA', weightPct: 84 }], 0, 2);
         const lumi = plan.rows.find((r) => r.symbol === 'LUMI.TA')!;
         expect(lumi.action).toBe('HOLD');
-        expect(lumi.reason).toContain('tolerance');
+        expect(lumi.reason).toContain('הסטייה המותרת');
         const teva = plan.rows.find((r) => r.symbol === 'TEVA.TA')!;
         expect(teva.action).toBe('SELL');
         expect(teva.shares).toBe(10);
-        expect(teva.reason).toContain('Not in your targets');
+        expect(teva.reason).toContain('לא ביעדים שלך');
     });
 
     it('explains a gap too small for one share instead of pretending to buy', () => {
         const plan = planBuyDay(portfolio(), [{ symbol: 'LUMI.TA', weightPct: 85 }, { symbol: 'TEVA.TA', weightPct: 10 }, { symbol: 'NICE.TA', weightPct: 5 }], 300, 2, quotes);
         const nice = plan.rows.find((r) => r.symbol === 'NICE.TA')!;
         expect(nice.action).toBe('HOLD');
-        expect(nice.reason).toContain('less than one share');
+        expect(nice.reason).toContain('פחות ממניה אחת');
     });
 });

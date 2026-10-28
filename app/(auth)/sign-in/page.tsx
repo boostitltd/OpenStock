@@ -33,61 +33,61 @@ const SignIn = () => {
                 router.push('/dashboard');
                 return;
             }
-            toast.error('Sign in failed', {
-                description: result.error ?? 'Invalid email or password.',
+            toast.error('ההתחברות נכשלה', {
+                description: result.error ?? 'המייל או הסיסמה שגויים.',
             });
         } catch (e) {
             console.error(e);
-            toast.error('Sign in failed', {
-                description: e instanceof Error ? e.message : 'Failed to sign in.'
+            toast.error('ההתחברות נכשלה', {
+                description: e instanceof Error ? e.message : 'ההתחברות נכשלה.'
             })
         }
     }
 
     return (
         <>
-            <h1 className="form-title mb-2">Welcome back</h1>
-            <p className="mb-8 text-faint">Sign in to your watchlist and alerts.</p>
+            <h1 className="form-title mb-2">שמחים לראות אותך שוב</h1>
+            <p className="mb-8 text-faint">התחברו לתיק, לרשימת המעקב ולהתראות.</p>
 
             <SocialAuthButtons />
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <InputField
                     name="email"
-                    label="Email"
+                    label="מייל"
                     placeholder="opendevsociety@cc.cc"
                     register={register}
                     error={errors.email}
                     validation={{
-                        required: 'Email is required',
+                        required: 'צריך למלא מייל',
                         pattern: {
                             value: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
-                            message: 'Please enter a valid email address'
+                            message: 'כתובת המייל לא תקינה'
                         }
                     }}
                 />
 
                 <InputField
                     name="password"
-                    label="Password"
-                    placeholder="Enter your password"
+                    label="סיסמה"
+                    placeholder="הסיסמה שלך"
                     type="password"
                     register={register}
                     error={errors.password}
-                    validation={{ required: 'Password is required', minLength: 8 }}
+                    validation={{ required: 'צריך למלא סיסמה', minLength: 8 }}
                 />
 
                 <div className="flex justify-end">
                     <Link href="/forgot-password" className="footer-link text-sm">
-                        Forgot password?
+                        שכחת סיסמה?
                     </Link>
                 </div>
 
                 <Button type="submit" disabled={isSubmitting} className="yellow-btn w-full mt-5">
-                    {isSubmitting ? 'Signing In' : 'Sign In'}
+                    {isSubmitting ? 'מתחברים' : 'התחברות'}
                 </Button>
 
-                <FooterLink text="Don't have an account?" linkText="Create an account" href="/sign-up" />
+                <FooterLink text="אין לך חשבון?" linkText="להרשמה" href="/sign-up" />
                 <OpenDevSocietyBranding outerClassName="mt-10 flex justify-center" />
             </form>
         </>

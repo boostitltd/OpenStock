@@ -4,7 +4,7 @@ import ResetPasswordForm from './ResetPasswordForm';
 
 const ResetPasswordPage = () => {
     return (
-        <Suspense fallback={<div className="text-sm text-gray-400">Loading reset form...</div>}>
+        <Suspense fallback={<div className="text-sm text-gray-400">טוענים…</div>}>
             <ResetPasswordForm />
         </Suspense>
     );

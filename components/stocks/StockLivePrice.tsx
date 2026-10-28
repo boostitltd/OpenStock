@@ -18,7 +18,7 @@ const StockLivePrice = ({ symbol, initial, currency }: { symbol: string; initial
             <div className="flex flex-col items-start gap-1 pb-0.5">
                 <span className="flex items-center gap-2">
                     <ChangePill value={quote?.dp} />
-                    <span className="num text-[12px] text-faint">
+                    <span dir="ltr" className="num text-[12px] text-faint">
                         {quote?.d != null ? `${quote.d > 0 ? '+' : ''}${quote.d.toFixed(2)}` : ''}
                     </span>
                 </span>

@@ -56,26 +56,26 @@ export default function DonatePopup() {
     return (
         <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : handleDismiss())}>
             <DialogContent className="gap-5 sm:max-w-[440px]">
-                <DialogHeader className="gap-3 text-left">
+                <DialogHeader className="gap-3 text-start">
                     <span className="bento-ico size-11 bg-brand-soft text-brand-ink">
                         <Heart className="size-5 fill-current" />
                     </span>
                     <div>
-                        <p className="kicker flex items-center gap-2 text-brand-ink"><span className="live-dot" /> Open for sponsors</p>
-                        <DialogTitle className="mt-1.5 text-2xl font-bold tracking-[-0.03em]">Keep OpenStock free</DialogTitle>
+                        <p className="kicker flex items-center gap-2 text-brand-ink"><span className="live-dot" /> פתוח לנותני חסות</p>
+                        <DialogTitle className="mt-1.5 text-2xl font-bold tracking-[-0.03em]">לשמור על OpenStock חינמי</DialogTitle>
                     </div>
                     <DialogDescription className="text-[15px] leading-relaxed text-muted-foreground">
-                        Your love for OpenStock and Open Dev Society has helped us grow, and we&apos;re now hitting
-                        Vercel&apos;s free tier limits. Sponsor from $5 a month, give once, or talk with us about a partnership.
+                        האהבה שלכם ל-OpenStock ול-Open Dev Society עזרה לנו לגדול, ועכשיו אנחנו מגיעים לתקרה של החבילה החינמית
+                        של Vercel. אפשר לתת חסות מ-5 דולר לחודש, לתרום פעם אחת, או לדבר איתנו על שיתוף פעולה.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
                     <Link href="/sponsor" onClick={handleDismiss} className="btn btn-primary h-11 flex-1">
-                        <Heart className="fill-current" /> Become a sponsor
+                        <Heart className="fill-current" /> לתת חסות
                     </Link>
                     <button type="button" onClick={handleDismiss} className="btn btn-ghost h-11 flex-1">
-                        Maybe later
+                        אולי אחר כך
                     </button>
                 </div>
             </DialogContent>

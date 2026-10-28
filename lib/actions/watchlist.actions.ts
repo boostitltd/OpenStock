@@ -15,13 +15,13 @@ const MAX_WATCHLIST = 50;
 export async function addToWatchlist(symbol: string, company: string) {
     const userId = await requireUserId();
     const ticker = String(symbol ?? '').trim().toUpperCase();
-    if (!SYMBOL_PATTERN.test(ticker)) throw new Error('Invalid symbol');
+    if (!SYMBOL_PATTERN.test(ticker)) throw new Error('הסימול לא תקין');
     const name = String(company ?? '').trim().slice(0, 120);
     try {
         await connectToDatabase();
 
         if (!(await Watchlist.exists({ userId, symbol: ticker })) && (await Watchlist.countDocuments({ userId })) >= MAX_WATCHLIST) {
-            return { error: `Your watchlist is full (${MAX_WATCHLIST} stocks). Remove one to add another.` };
+            return { error: `רשימת המעקב מלאה (${MAX_WATCHLIST} מניות). הסירו אחת כדי להוסיף אחרת.` };
         }
 
         // Upsert to avoid duplicates/errors if it already exists
