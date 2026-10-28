@@ -25,7 +25,7 @@ export default function SymbolPicker({ value, onChange, placeholder = 'Company o
     const [active, setActive] = useState(0);
     const [loading, setLoading] = useState(false);
     const latest = useRef(0);
-    const skipSearch = useRef(false); // set when a result was just picked, so the field doesn't search for its own symbol
+    const skipSearch = useRef(Boolean(value)); // set when a result was just picked, so the field doesn't search for its own symbol
     const box = useRef<HTMLDivElement>(null);
 
     // The parent may set the symbol (prefilled from a holding); typing already keeps the two in step
@@ -37,7 +37,7 @@ export default function SymbolPicker({ value, onChange, placeholder = 'Company o
     useEffect(() => {
         const q = query.trim();
         if (skipSearch.current) { skipSearch.current = false; setResults([]); return; }
-        if (q.length < 2) { setResults([]); return; }
+        if (q.length < 2 || q.length > 20) { setResults([]); return; } // Finnhub rejects long queries (422)
         const id = ++latest.current;
         setLoading(true);
         const t = setTimeout(async () => {

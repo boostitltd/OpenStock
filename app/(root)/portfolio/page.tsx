@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, PlusCircle, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { CalendarCheck, PlusCircle, Telescope, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import Panel from "@/components/Panel";
 import DataFreshness from "@/components/DataFreshness";
 import HoldingsTable from "@/components/portfolio/HoldingsTable";
@@ -36,6 +36,7 @@ export default async function PortfolioPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <Link href="/portfolio/outlook" className="btn btn-ghost"><Telescope /> Outlook</Link>
                     <Link href="/portfolio/buy-day" className="btn btn-ghost"><CalendarCheck /> Buy day</Link>
                     <AddTradeModal><button type="button" className="btn btn-primary"><PlusCircle /> Record a trade</button></AddTradeModal>
                 </div>
