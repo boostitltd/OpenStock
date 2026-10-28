@@ -98,3 +98,11 @@ describe('composeBrief', () => {
         expect(b.html).not.toContain('<script>');
     });
 });
+
+describe('arena line', () => {
+    it("names the leader and the system's place in the live game", () => {
+        const { html } = composeBrief(now({ strategy: { buys: [{ name: 'אנלייט', rank: 1, momentumPct: 67, shares: 0, amount: 0 }], sells: [], keeps: [], backtest: null }, arena: { months: 2, leader: 'הכי קרובות לשיא', leaderPct: 3.1, systemPlace: 2, systemPct: 1.4, total: 9 } }), null, 'https://x.test');
+        expect(html).toContain('זירת הקופים');
+        expect(html).toContain('במקום 2 מתוך 9');
+    });
+});

@@ -33,6 +33,7 @@ export type BriefNow = {
     radar?: { political: { explanation: string; affects: string[]; direction: 'up' | 'down' | 'unclear'; source: 'trump' | 'whitehouse' }[]; insiders: { name: string; text: string }[]; congress: { ticker: string; members: number }[] } | null;
     goal?: { amount: number; date: string; chancePct: number; requiredMonthly: number | null } | null;
     harvest?: { name: string; saving: number }[];
+    arena?: { months: number; leader: string; leaderPct: number; systemPlace: number; systemPct: number; total: number } | null;
 };
 
 export type BriefPrev = {
@@ -200,8 +201,10 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
             cell(now.monthlyBudget > 0 ? (b.shares > 0 ? `${b.shares} מניות, ${e(money(b.amount, base))}` : 'פחות ממניה אחת') : ''),
         ])));
         if (st.keeps.length) parts.push(p(`להמשיך להחזיק: ${st.keeps.map((k) => `${e(k.name)} (מקום ${k.rank})`).join(', ')}.`, C.sub, 13.5));
-        if (st.backtest) parts.push(p(`ב-20 השנים האחרונות, אחרי מס, השיטה הניבה ${st.backtest.strategyPct}% בשנה, מול ${st.backtest.equalPct}% לקנייה שווה של כל המניות ו-${st.backtest.indexPct}% למדד ת"א 125. בעבר זה עבד, וזה לא מבטיח את העתיד.`, C.faint, 12.5));
+        if (st.backtest) parts.push(p(`ב-20 השנים האחרונות, אחרי מס, השיטה הניבה ${st.backtest.strategyPct}% בשנה, מול ${st.backtest.equalPct}% לקנייה שווה של כל המניות ו-${st.backtest.indexPct}% למדד ת"א 125 (בלי דיבידנדים). בעבר זה עבד, וזה לא מבטיח את העתיד.`, C.faint, 12.5));
         if (!(now.monthlyBudget > 0)) parts.push(p('עוד לא הגדרת סכום חודשי, ולכן אין כמויות. מגדירים אותו בעמוד יום קנייה.', C.sub, 13.5));
+        const ar = now.arena;
+        if (ar) parts.push(p(`זירת הקופים, המשחק החי (${ar.months} ${ar.months === 1 ? 'חודש' : 'חודשים'}): ${ar.systemPlace === 1 ? `השיטה של המערכת במקום הראשון, ${ltr(`${ar.systemPct > 0 ? '+' : ''}${ar.systemPct}%`)}` : `במקום הראשון ${e(ar.leader)}, ${ltr(`${ar.leaderPct > 0 ? '+' : ''}${ar.leaderPct}%`)}. השיטה של המערכת במקום ${ar.systemPlace} מתוך ${ar.total}, ${ltr(`${ar.systemPct > 0 ? '+' : ''}${ar.systemPct}%`)}`}. בטווח קצר כזה זה בעיקר מזל.`, C.faint, 12.5));
     }
     if (now.plan?.hasTargets && now.monthlyBudget > 0) {
         parts.push(p('לפי משקלי היעד שקבעת:', C.text, 14));

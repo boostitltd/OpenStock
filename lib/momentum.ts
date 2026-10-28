@@ -5,7 +5,8 @@
 // only when it falls out of the top 15, which keeps selling, and so tax, rare. Taxes are 25% on realised gains
 // with losses carried forward, trading costs 0.2% a side.
 
-export type Monthly = { month: string; close: number }[];   // YYYY-MM, oldest first, dividend-adjusted
+// YYYY-MM, oldest first. `close` includes reinvested dividends; `price` and `div` (same units) feed the dividend yield.
+export type Monthly = { month: string; close: number; price?: number; div?: number }[];
 
 export const TOP_BUY = 5;
 export const KEEP_TOP = 15;
@@ -25,8 +26,9 @@ export const GROUP: Record<string, string> = {
 export const groupOf = (symbol: string) => GROUP[symbol.toUpperCase().replace(/\.TA$/, '')] ?? symbol;
 
 // This month's buys: walk down the ranking, at most SECTOR_CAP per group, until TOP_BUY are chosen. A sector the
-// portfolio already holds is skipped (adding to the very stock already held is fine): backtested, it earned the same
-// 17.4% a year while holding fewer stocks from one sector, and it is what "same bet" warns about.
+// portfolio already holds is skipped (adding to the very stock already held is fine): backtested on price-only data it
+// earned the same (17.4% vs 17.3% a year) while holding fewer stocks from one sector, and it is what "same bet" warns about.
+// With dividends (2026-10-28): 23.5% after tax vs 16.3% equal weight; every "wait" rule lowered it (20.9-23.2%).
 export function pickBuys(ranked: Ranked[], n = TOP_BUY, cap = SECTOR_CAP, held: Iterable<string> = []): Ranked[] {
     const heldSet = new Set([...held].map((s) => s.toUpperCase()));
     const heldGroups = new Set([...heldSet].map(groupOf));
@@ -60,20 +62,25 @@ export function cleanSpikes(rows: Monthly): Monthly {
     return out;
 }
 
-type Table = { months: string[]; px: Map<string, Map<string, number>> };
+// px: total-return closes. yld: dividends paid over the 12 months to that month, over that month's price.
+export type Table = { months: string[]; px: Map<string, Map<string, number>>; yld: Map<string, Map<string, number>> };
 
 export function toTable(series: Record<string, Monthly>): Table {
-    const px = new Map<string, Map<string, number>>();
+    const px = new Map<string, Map<string, number>>(), yld = new Map<string, Map<string, number>>();
     const all = new Set<string>();
     for (const [s, rows] of Object.entries(series)) {
-        const m = new Map<string, number>();
-        for (const r of cleanSpikes(rows)) { m.set(r.month, r.close); all.add(r.month); }
-        px.set(s, m);
+        const m = new Map<string, number>(), y = new Map<string, number>();
+        const kept = cleanSpikes(rows);
+        kept.forEach((r, k) => {
+            m.set(r.month, r.close); all.add(r.month);
+            if (r.price && k >= 12) y.set(r.month, kept.slice(k - 11, k + 1).reduce((a, x) => a + (x.div ?? 0), 0) / r.price);
+        });
+        px.set(s, m); yld.set(s, y);
     }
-    return { months: [...all].sort(), px };
+    return { months: [...all].sort(), px, yld };
 }
 
-const price = (t: Table, s: string, i: number) => (i >= 0 && i < t.months.length ? t.px.get(s)?.get(t.months[i]) ?? null : null);
+export const price = (t: Table, s: string, i: number) => (i >= 0 && i < t.months.length ? t.px.get(s)?.get(t.months[i]) ?? null : null);
 
 // 12-1 momentum at month i: from the close 12 months back to the close one month back.
 export function momentumAt(t: Table, s: string, i: number): number | null {
@@ -110,7 +117,11 @@ export function irrMonthly(final: number, months: number, monthly: number): numb
 
 // Put `monthly` in every month from `from` to `to`, three ways, and value each after the tax due on selling it all
 // at the end: the strategy (taxable account and a tax-free one), every stock equally without selling, and the index.
-export function backtest(t: Table, indexSeries: Monthly, from: string, to: string, monthly = 1000): { points: BacktestPoint[]; stats: BacktestStats } | null {
+// `rank` swaps the ranking (the arena runs other methods and random monkeys through the very same rules);
+// `canBuy` tests a "wait" rule: a stock it rejects is skipped this month and the next one in the ranking is bought.
+export function backtest(t: Table, indexSeries: Monthly, from: string, to: string, monthly = 1000,
+    rank: (t: Table, i: number, symbols: string[]) => Ranked[] = rankAt,
+    canBuy?: (t: Table, i: number, symbol: string) => boolean): { points: BacktestPoint[]; stats: BacktestStats } | null {
     const idx = new Map(cleanSpikes(indexSeries).map((r) => [r.month, r.close]));
     const symbols = [...t.px.keys()];
     type Lot = { units: number; cost: number };
@@ -138,7 +149,7 @@ export function backtest(t: Table, indexSeries: Monthly, from: string, to: strin
     for (let i = 0; i < t.months.length; i++) {
         const month = t.months[i];
         if (month < from || month > to || !idx.has(month)) continue;
-        const ranked = rankAt(t, i, symbols);
+        const ranked = rank(t, i, symbols);
         if (ranked.length < KEEP_TOP) continue;
         lastI = i;
         const keep = new Set(ranked.slice(0, KEEP_TOP).map((r) => r.symbol));
@@ -148,7 +159,7 @@ export function backtest(t: Table, indexSeries: Monthly, from: string, to: strin
                 const p = price(t, s, i);
                 if (p !== null && !keep.has(s)) cash += sell(acc, s, p);
             }
-            const buy = pickBuys(ranked, TOP_BUY, SECTOR_CAP, acc.lots.keys()).map((r) => r.symbol);
+            const buy = pickBuys(canBuy ? ranked.filter((r) => canBuy(t, i, r.symbol)) : ranked, TOP_BUY, SECTOR_CAP, acc.lots.keys()).map((r) => r.symbol);
             for (const s of buy) {
                 const amt = cash / buy.length, p = price(t, s, i)!;
                 const l = acc.lots.get(s) ?? { units: 0, cost: 0 };

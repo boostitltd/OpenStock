@@ -10,9 +10,9 @@ import { hebrewName, UNIVERSE } from '@/lib/universe';
 import type { Currency } from '@/lib/portfolio';
 
 const INDEX = '^TA125.TA';
-const STOCKS = UNIVERSE.filter((u) => u.kind === 'stock').map((u) => u.symbol);
+export const STOCKS = UNIVERSE.filter((u) => u.kind === 'stock').map((u) => u.symbol);
 
-type Market = { table: ReturnType<typeof toTable>; index: Monthly; at: number; buckets: BucketStats[] };
+export type Market = { table: ReturnType<typeof toTable>; index: Monthly; at: number; buckets: BucketStats[] };
 let market: Market | null = null;
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -22,7 +22,8 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
     return out;
 }
 
-async function loadMarket(): Promise<Market> {
+// Shared with the arena: the same twenty years of prices feed the method and everything it is compared with.
+export async function loadMarket(): Promise<Market> {
     if (market && Date.now() - market.at < 12 * 3600 * 1000) return market;
     const [rows, index] = await Promise.all([mapLimit(STOCKS, 6, (s) => getYahooMonthly(s)), getYahooMonthly(INDEX)]);
     const series = Object.fromEntries(STOCKS.map((s, i) => [s, rows[i]]).filter(([, r]) => (r as Monthly).length > 13));

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Briefcase, Code2, Heart, Info, LayoutDashboard, LifeBuoy, Lightbulb, LogOut, Radar, Search, Sigma, Star } from "lucide-react";
+import { BookOpen, Briefcase, Code2, Heart, Info, LayoutDashboard, LifeBuoy, Lightbulb, LogOut, Radar, Search, Sigma, Star, Trophy } from "lucide-react";
 import { openSearch } from "@/components/SearchCommand";
 import { signOut } from "@/lib/actions/auth.actions";
 import { cn } from "@/lib/utils";
@@ -52,7 +52,7 @@ const Sidebar = ({ user, watchlist }: SidebarProps) => {
                     <Star /> <span className="flex-1">רשימת מעקב</span>
                     <span className="num text-xs text-faint">{watchlist.length}</span>
                 </Link>
-                <Link href="/portfolio" className={cn('side-item', pathname.startsWith('/portfolio') && !['/portfolio/ideas', '/portfolio/strategy', '/portfolio/radar'].some((p) => pathname.startsWith(p)) && 'is-active')}>
+                <Link href="/portfolio" className={cn('side-item', pathname.startsWith('/portfolio') && !['/portfolio/ideas', '/portfolio/strategy', '/portfolio/arena', '/portfolio/radar'].some((p) => pathname.startsWith(p)) && 'is-active')}>
                     <Briefcase /> התיק
                 </Link>
                 <Link href="/portfolio/ideas" className={cn('side-item', pathname.startsWith('/portfolio/ideas') && 'is-active')}>
@@ -60,6 +60,9 @@ const Sidebar = ({ user, watchlist }: SidebarProps) => {
                 </Link>
                 <Link href="/portfolio/strategy" className={cn('side-item', pathname.startsWith('/portfolio/strategy') && 'is-active')}>
                     <Sigma /> השיטה
+                </Link>
+                <Link href="/portfolio/arena" className={cn('side-item', pathname.startsWith('/portfolio/arena') && 'is-active')}>
+                    <Trophy /> זירת הקופים
                 </Link>
                 <Link href="/portfolio/radar" className={cn('side-item', pathname.startsWith('/portfolio/radar') && 'is-active')}>
                     <Radar /> ראדאר

@@ -12,6 +12,15 @@ import { planBuyDay } from '@/lib/portfolio';
 import { computeStrategy } from '@/lib/server/strategy';
 import { computeThesisChecks } from '@/lib/server/thesis';
 import { computeRadar } from '@/lib/server/radar';
+import { computeArena, type ArenaView } from '@/lib/server/arena';
+
+// The live game in one line: who leads, and where the system's own method stands.
+function arenaLine(a: ArenaView | null): BriefNow['arena'] {
+    const rows = a?.paper.rows ?? [];
+    const k = rows.findIndex((r) => r.id === 'momentum');
+    if (!rows.length || k < 0) return null;
+    return { months: rows[k].months, leader: rows[0].name, leaderPct: rows[0].gainPct, systemPlace: k + 1, systemPct: rows[k].gainPct, total: rows.length };
+}
 
 export async function buildBriefNow(userId: string): Promise<BriefNow> {
     const [outlook, ideas, loaded, strategy, thesis] = await Promise.all([
@@ -19,6 +28,7 @@ export async function buildBriefNow(userId: string): Promise<BriefNow> {
         computeStrategy(userId).catch((e) => { console.error('Brief strategy failed', e); return null; }),
         computeThesisChecks(userId).catch((e) => { console.error('Brief thesis failed', e); return []; }),
     ]);
+    const arena = await computeArena().catch((e) => { console.error('Brief arena failed', e); return null; });
     const radar = await computeRadar(userId, (strategy?.buys ?? []).map((b) => b.symbol)).catch((e) => { console.error('Brief radar failed', e); return null; });
     const { portfolio, settings, quotes } = loaded;
     const hasTargets = settings.targets.some((t) => t.weightPct > 0);
@@ -54,6 +64,7 @@ export async function buildBriefNow(userId: string): Promise<BriefNow> {
         } : null,
         goal: outlook.goal ? { amount: outlook.goal.amount, date: outlook.goal.date, chancePct: outlook.goal.chancePct, requiredMonthly: outlook.goal.requiredMonthly } : null,
         harvest: (strategy?.harvest ?? []).map((h) => ({ name: h.name, saving: h.saving })),
+        arena: arenaLine(arena),
     };
 }
 

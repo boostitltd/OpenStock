@@ -20,6 +20,13 @@ export async function getStrategy() {
     return computeStrategy(await requireUserId());
 }
 
+// Other ways of choosing stocks, and random monkeys, through the method's own rules (the same for every user).
+export async function getArena() {
+    await requireUserId();
+    const { computeArena } = await import('@/lib/server/arena');
+    return computeArena();
+}
+
 // Is the reason behind each holding still true?
 export async function getThesisChecks() {
     const { computeThesisChecks } = await import('@/lib/server/thesis');

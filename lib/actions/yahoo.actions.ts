@@ -158,24 +158,41 @@ export async function getYahooHistory(symbol: string, range: '1y' | '2y' | '5y' 
     }
 }
 
-// Monthly dividend-adjusted closes for as far back as Yahoo goes (Tel Aviv: mostly 2002), cached for a day. Only the
-// ratios matter for momentum, so agorot are not converted. One row per month: Yahoo sometimes repeats a month.
-const monthlyCache = new Map<string, { value: { month: string; close: number }[]; freshUntil: number }>();
-export async function getYahooMonthly(symbol: string): Promise<{ month: string; close: number }[]> {
+// Monthly total-return closes for as far back as Yahoo goes (Tel Aviv: mostly 2002), cached for a day. Yahoo's own
+// "adjusted close" for Tel Aviv ignores dividends (checked 2026-10-28: Bezeq's factor moved 0.03% in a year that paid
+// it ~5%), so the dividends are taken from the chart's own dividend events and reinvested here: `close` grows by
+// (price + dividend) / previous price. `price` and `div` are kept for the dividend-yield method. Only ratios matter,
+// so agorot are not converted. A "dividend" above a fifth of the price is a unit slip in the old data and is skipped.
+export type MonthlyRow = { month: string; close: number; price: number; div: number };
+const monthlyCache = new Map<string, { value: MonthlyRow[]; freshUntil: number }>();
+export async function getYahooMonthly(symbol: string): Promise<MonthlyRow[]> {
     const key = symbol.toUpperCase();
     const hit = monthlyCache.get(key);
     if (hit && hit.freshUntil > Date.now()) return hit.value;
     try {
-        const res = await fetch(`${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}?range=max&interval=1mo`, {
+        const res = await fetch(`${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}?range=max&interval=1mo&events=div`, {
             headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' }, signal: AbortSignal.timeout(10000), cache: 'no-store',
         });
         if (!res.ok) throw new Error(`Yahoo monthly ${res.status} for ${symbol}`);
-        const r = ((await res.json()) as { chart?: { result?: { timestamp?: number[]; indicators?: { adjclose?: { adjclose?: (number | null)[] }[]; quote?: { close?: (number | null)[] }[] } }[] } }).chart?.result?.[0];
+        type R = { timestamp?: number[]; indicators?: { quote?: { close?: (number | null)[] }[] }; events?: { dividends?: Record<string, { date: number; amount: number }> } };
+        const r = ((await res.json()) as { chart?: { result?: R[] } }).chart?.result?.[0];
         const ts = r?.timestamp ?? [];
-        const closes = r?.indicators?.adjclose?.[0]?.adjclose ?? r?.indicators?.quote?.[0]?.close ?? [];
+        const closes = r?.indicators?.quote?.[0]?.close ?? [];
+        const monthOf = (t: number) => new Date(t * 1000).toISOString().slice(0, 7);
         const byMonth = new Map<string, number>();
-        ts.forEach((t, i) => { const c = closes[i]; if (typeof c === 'number' && c > 0) byMonth.set(new Date(t * 1000).toISOString().slice(0, 7), c); });
-        const value = [...byMonth].sort(([a], [b]) => a.localeCompare(b)).map(([month, close]) => ({ month, close }));
+        ts.forEach((t, i) => { const c = closes[i]; if (typeof c === 'number' && c > 0) byMonth.set(monthOf(t), c); });
+        const divs = new Map<string, number>();
+        for (const d of Object.values(r?.events?.dividends ?? {})) {
+            if (d.amount > 0) divs.set(monthOf(d.date), (divs.get(monthOf(d.date)) ?? 0) + d.amount);
+        }
+        let tr = 0, prev = 0;
+        const value = [...byMonth].sort(([a], [b]) => a.localeCompare(b)).map(([month, price]) => {
+            let div = divs.get(month) ?? 0;
+            if (prev > 0 && div > prev / 5) div = 0;
+            tr = prev > 0 ? tr * (price + div) / prev : price;
+            prev = price;
+            return { month, close: tr, price, div };
+        });
         monthlyCache.set(key, { value, freshUntil: Date.now() + 24 * 3600 * 1000 });
         return value;
     } catch (error) {
