@@ -5,25 +5,15 @@ import { connectToDatabase } from '@/database/mongoose';
 import { Trade } from '@/database/models/portfolio.model';
 import { PortfolioSettings } from '@/database/models/portfolio.model';
 import { requireUserId } from '@/lib/better-auth/auth';
-import { getCompanyProfile, getLiveQuotes } from '@/lib/actions/finnhub.actions';
-import { getUsdIls } from '@/lib/actions/yahoo.actions';
-import { buildPortfolio, planBuyDay, symbolCurrency, type Currency, type Portfolio, type QuoteInput, type Target, type TradeInput } from '@/lib/portfolio';
+import { loadPortfolio, loadSettings, loadTrades, type LoadedPortfolio, type PortfolioSettingsRow, type TradeRow } from '@/lib/server/portfolio-data';
+import { planBuyDay, symbolCurrency, type Currency, type Target } from '@/lib/portfolio';
 
 const SYMBOL_PATTERN = /^[A-Z0-9][A-Z0-9.&:-]{0,24}$/;
 const CURRENCIES: Currency[] = ['ILS', 'USD'];
 const MAX_TRADES = 2000;
 const MAX_TARGETS = 60;
 
-export type TradeRow = TradeInput & { _id: string; tradedAt: string; createdAt?: string };
-
-export type PortfolioSettingsRow = {
-    baseCurrency: Currency;
-    monthlyBudget: number;
-    driftTolerancePct: number;
-    targets: Target[];
-};
-
-const DEFAULT_SETTINGS: PortfolioSettingsRow = { baseCurrency: 'ILS', monthlyBudget: 0, driftTolerancePct: 2, targets: [] };
+export type { TradeRow, PortfolioSettingsRow } from '@/lib/server/portfolio-data';
 
 const asNumber = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? NaN : Number(v));
 
@@ -95,35 +85,13 @@ export async function deleteTrade(tradeId: string) {
 }
 
 export async function getTrades(): Promise<TradeRow[]> {
-    const userId = await requireUserId();
-    try {
-        await connectToDatabase();
-        const trades = await Trade.find({ userId }).sort({ tradedAt: -1, createdAt: -1 }).lean();
-        return JSON.parse(JSON.stringify(trades));
-    } catch (error) {
-        console.error('Error fetching trades:', error);
-        return [];
-    }
+    return loadTrades(await requireUserId());
 }
 
 // ---- Settings ------------------------------------------------------------------------------
 
 export async function getPortfolioSettings(): Promise<PortfolioSettingsRow> {
-    const userId = await requireUserId();
-    try {
-        await connectToDatabase();
-        const doc = await PortfolioSettings.findOne({ userId }).lean();
-        if (!doc) return DEFAULT_SETTINGS;
-        return {
-            baseCurrency: doc.baseCurrency ?? 'ILS',
-            monthlyBudget: doc.monthlyBudget ?? 0,
-            driftTolerancePct: doc.driftTolerancePct ?? 2,
-            targets: (doc.targets ?? []).map((t) => ({ symbol: t.symbol, weightPct: t.weightPct })),
-        };
-    } catch (error) {
-        console.error('Error fetching portfolio settings:', error);
-        return DEFAULT_SETTINGS;
-    }
+    return loadSettings(await requireUserId());
 }
 
 export async function savePortfolioSettings(input: Partial<PortfolioSettingsRow>) {
@@ -170,17 +138,8 @@ export async function savePortfolioSettings(input: Partial<PortfolioSettingsRow>
 // ---- Views ---------------------------------------------------------------------------------
 
 // Everything the portfolio pages need: trades, settings, today's prices and the FX rate, combined.
-export async function getPortfolio(): Promise<{ portfolio: Portfolio; settings: PortfolioSettingsRow; trades: TradeRow[]; fxLive: boolean; quotes: Record<string, QuoteInput> }> {
-    const [trades, settings] = await Promise.all([getTrades(), getPortfolioSettings()]);
-    const symbols = [...new Set([...trades.map((t) => t.symbol), ...settings.targets.map((t) => t.symbol)])];
-    const [quotes, profiles, fx] = await Promise.all([
-        symbols.length ? getLiveQuotes(symbols) : ({} as Awaited<ReturnType<typeof getLiveQuotes>>),
-        Promise.all(symbols.map((s) => getCompanyProfile(s).catch(() => null))),
-        getUsdIls(),
-    ]);
-    const quoteMap = Object.fromEntries(symbols.map((s, i) => [s, quotes[s]?.c ? { price: quotes[s]!.c!, name: profiles[i]?.name } : null]));
-    const portfolio = buildPortfolio(trades, quoteMap, settings.baseCurrency, fx.rate);
-    return { portfolio, settings, trades, fxLive: fx.live, quotes: quoteMap };
+export async function getPortfolio(): Promise<LoadedPortfolio> {
+    return loadPortfolio(await requireUserId());
 }
 
 export async function getBuyDayPlan(budgetOverride?: number) {
