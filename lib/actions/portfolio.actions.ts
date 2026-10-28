@@ -109,6 +109,23 @@ async function saveSettingsOrThrow(input: Partial<PortfolioSettingsRow>) {
         if (!Number.isFinite(tol) || tol < 0 || tol > 50) throw new Error('הסטייה המותרת צריכה להיות בין 0 ל-50');
         update.driftTolerancePct = tol;
     }
+    if (input.goalAmount !== undefined) {
+        if (input.goalAmount === null) update.goalAmount = null;
+        else {
+            const g = asNumber(input.goalAmount);
+            if (!Number.isFinite(g) || g <= 0) throw new Error('סכום המטרה צריך להיות מספר חיובי');
+            update.goalAmount = g;
+        }
+    }
+    if (input.goalDate !== undefined) {
+        if (input.goalDate === null) update.goalDate = null;
+        else {
+            const d = new Date(input.goalDate);
+            if (Number.isNaN(d.getTime()) || d.getTime() < Date.now() + 180 * 86400000) throw new Error('תאריך המטרה צריך להיות לפחות חצי שנה קדימה');
+            if (d.getFullYear() > new Date().getFullYear() + 50) throw new Error('תאריך המטרה רחוק מדי');
+            update.goalDate = d.toISOString().slice(0, 10);
+        }
+    }
     if (input.targets !== undefined) {
         if (!Array.isArray(input.targets) || input.targets.length > MAX_TARGETS) throw new Error(`עד ${MAX_TARGETS} יעדים`);
         const seen = new Set<string>();
@@ -165,4 +182,22 @@ export async function addTrade(input: Parameters<typeof addTradeOrThrow>[0]): Pr
 
 export async function savePortfolioSettings(input: Partial<PortfolioSettingsRow>): Promise<ActionResult<{ success: boolean }>> {
     return asResult(() => saveSettingsOrThrow(input));
+}
+
+// Replace the reason on the most recent buy of a holding (the reason the review checks).
+export async function updateThesis(symbol: string, thesis: string): Promise<ActionResult<{ success: boolean }>> {
+    return asResult(async () => {
+        const userId = await requireUserId();
+        const sym = String(symbol ?? '').trim().toUpperCase();
+        const text = String(thesis ?? '').trim().slice(0, 500);
+        if (!SYMBOL_PATTERN.test(sym)) throw new Error('הסימול לא תקין');
+        if (!text) throw new Error('כתבו משפט אחד: למה מחזיקים');
+        await connectToDatabase();
+        const last = await Trade.findOne({ userId, symbol: sym, side: 'BUY' }).sort({ tradedAt: -1, createdAt: -1 });
+        if (!last) throw new Error('לא נמצאה קנייה של המניה הזו');
+        last.thesis = text;
+        await last.save();
+        revalidatePath('/portfolio', 'layout');
+        return { success: true };
+    });
 }

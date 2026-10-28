@@ -158,6 +158,32 @@ export async function getYahooHistory(symbol: string, range: '1y' | '2y' | '5y' 
     }
 }
 
+// Monthly dividend-adjusted closes for as far back as Yahoo goes (Tel Aviv: mostly 2002), cached for a day. Only the
+// ratios matter for momentum, so agorot are not converted. One row per month: Yahoo sometimes repeats a month.
+const monthlyCache = new Map<string, { value: { month: string; close: number }[]; freshUntil: number }>();
+export async function getYahooMonthly(symbol: string): Promise<{ month: string; close: number }[]> {
+    const key = symbol.toUpperCase();
+    const hit = monthlyCache.get(key);
+    if (hit && hit.freshUntil > Date.now()) return hit.value;
+    try {
+        const res = await fetch(`${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}?range=max&interval=1mo`, {
+            headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' }, signal: AbortSignal.timeout(10000), cache: 'no-store',
+        });
+        if (!res.ok) throw new Error(`Yahoo monthly ${res.status} for ${symbol}`);
+        const r = ((await res.json()) as { chart?: { result?: { timestamp?: number[]; indicators?: { adjclose?: { adjclose?: (number | null)[] }[]; quote?: { close?: (number | null)[] }[] } }[] } }).chart?.result?.[0];
+        const ts = r?.timestamp ?? [];
+        const closes = r?.indicators?.adjclose?.[0]?.adjclose ?? r?.indicators?.quote?.[0]?.close ?? [];
+        const byMonth = new Map<string, number>();
+        ts.forEach((t, i) => { const c = closes[i]; if (typeof c === 'number' && c > 0) byMonth.set(new Date(t * 1000).toISOString().slice(0, 7), c); });
+        const value = [...byMonth].sort(([a], [b]) => a.localeCompare(b)).map(([month, close]) => ({ month, close }));
+        monthlyCache.set(key, { value, freshUntil: Date.now() + 24 * 3600 * 1000 });
+        return value;
+    } catch (error) {
+        console.error('Error fetching Yahoo monthly for', symbol, error);
+        return hit?.value ?? [];
+    }
+}
+
 export type YahooFundamentals = {
     targetMeanPrice: number | null; targetLowPrice: number | null; targetHighPrice: number | null; analysts: number | null;
     recommendation: string | null;   // Yahoo's key: strong_buy / buy / hold / underperform / sell / none

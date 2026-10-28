@@ -15,9 +15,11 @@ export type PortfolioSettingsRow = {
     monthlyBudget: number;
     driftTolerancePct: number;
     targets: Target[];
+    goalAmount: number | null;
+    goalDate: string | null;     // YYYY-MM-DD
 };
 
-export const DEFAULT_SETTINGS: PortfolioSettingsRow = { baseCurrency: 'ILS', monthlyBudget: 0, driftTolerancePct: 2, targets: [] };
+export const DEFAULT_SETTINGS: PortfolioSettingsRow = { baseCurrency: 'ILS', monthlyBudget: 0, driftTolerancePct: 2, targets: [], goalAmount: null, goalDate: null };
 
 export async function loadTrades(userId: string): Promise<TradeRow[]> {
     try {
@@ -40,6 +42,8 @@ export async function loadSettings(userId: string): Promise<PortfolioSettingsRow
             monthlyBudget: doc.monthlyBudget ?? 0,
             driftTolerancePct: doc.driftTolerancePct ?? 2,
             targets: (doc.targets ?? []).map((t) => ({ symbol: t.symbol, weightPct: t.weightPct })),
+            goalAmount: doc.goalAmount ?? null,
+            goalDate: doc.goalDate ? new Date(doc.goalDate).toISOString().slice(0, 10) : null,
         };
     } catch (error) {
         console.error('Error fetching portfolio settings:', error);

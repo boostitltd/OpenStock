@@ -60,6 +60,11 @@ export default async function IdeasPage() {
                 </div>
             </header>
 
+            <Link href="/portfolio/strategy" className="mb-3 flex items-center justify-between gap-3 rounded-[12px] bg-brand-soft/40 px-4 py-3 shadow-[inset_0_0_0_1px_oklch(0.8_0.13_176/0.25)] hover:bg-brand-soft/60">
+                <span className="text-[14px] text-foreground"><span className="font-semibold">רוצה כלל שנבדק על 20 שנה?</span> בעמוד השיטה: מה לקנות ומה למכור החודש, ומה זה היה עושה בעבר.</span>
+                <span className="shrink-0 text-[13px] font-semibold text-brand-ink">לשיטה</span>
+            </Link>
+
             {r.held.length === 0 && (
                 <Panel title="עוד אין מניות בתיק" className="mb-3">
                     <div className="empty-state">

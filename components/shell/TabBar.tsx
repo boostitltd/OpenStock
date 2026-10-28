@@ -18,6 +18,8 @@ const PAGE_LABELS: Record<string, string> = {
     '/portfolio/buy-day': 'יום קנייה',
     '/portfolio/outlook': 'תחזית',
     '/portfolio/ideas': 'מה לקנות',
+    '/portfolio/strategy': 'השיטה',
+    '/portfolio/radar': 'ראדאר',
     '/profile': 'פרופיל',
 };
 
@@ -103,7 +105,7 @@ const TabBar = ({ onMenu }: { onMenu: () => void }) => {
                             <Link href={path} aria-current={active ? 'page' : undefined} className="flex min-w-0 flex-1 items-center gap-2 before:absolute before:inset-0 before:content-['']">
                                 {path === '/dashboard' && <LayoutDashboard />}
                                 {path === '/watchlist' && <Star />}
-                                {path.startsWith('/portfolio') && path !== '/portfolio/ideas' && <Briefcase />}
+                                {path.startsWith('/portfolio') && !['/portfolio/ideas', '/portfolio/strategy', '/portfolio/radar'].includes(path) && <Briefcase />}
                                 {path === '/portfolio/ideas' && <Lightbulb />}
                                 <span dir={isStock ? 'ltr' : undefined} className={cn('tab-label', isStock && 'mono text-[13px]')}>{tabLabel(path)}</span>
                             </Link>

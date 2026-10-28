@@ -4,7 +4,7 @@
 import { loadPortfolio } from '@/lib/server/portfolio-data';
 import { getLiveQuotes } from '@/lib/actions/finnhub.actions';
 import { getYahooFundamentals, getYahooHistory, type YahooFundamentals } from '@/lib/actions/yahoo.actions';
-import { alignReturns, correlation, portfolioStats, seriesStats, simulate, type Series, type SeriesStats, type SimResult } from '@/lib/forecast';
+import { alignReturns, correlation, planGoal, portfolioStats, seriesStats, simulate, type GoalResult, type Series, type SeriesStats, type SimResult } from '@/lib/forecast';
 import { symbolCurrency, toBase, type Currency, type Holding } from '@/lib/portfolio';
 
 const SYMBOL_PATTERN = /^[A-Z0-9][A-Z0-9.&:-]{0,24}$/;
@@ -35,6 +35,9 @@ export type PortfolioOutlook = {
     historyFrom: string | null; historyDays: number;
     holdings: HoldingOutlook[];
     whatIf: WhatIf | null;
+    goal: GoalResult | null;
+    goalAmount: number | null;
+    goalDate: string | null;
 };
 
 export type WhatIf = {
@@ -96,6 +99,12 @@ export async function computeOutlook(userId: string, whatIfSymbol?: string, what
         };
     });
 
+    let goal: GoalResult | null = null;
+    if (settings.goalAmount && settings.goalDate && joint.rows.length >= 60) {
+        const years = (Date.parse(settings.goalDate) - Date.now()) / (365.25 * 86400000);
+        if (years > 0.4) goal = planGoal({ rows: joint.rows, values, weights, monthly: settings.monthlyBudget, amount: settings.goalAmount, years, date: settings.goalDate, driftAnnual: ASSUMED_RETURN, paths: 800 });
+    }
+
     let whatIf: WhatIf | null = null;
     if (whatIfSymbol) whatIf = await buildWhatIf(whatIfSymbol, whatIfPct ?? 10, withHistory.map((x) => x.s), values, weights, settings.monthlyBudget, base, usdIls, stats);
 
@@ -103,6 +112,7 @@ export async function computeOutlook(userId: string, whatIfSymbol?: string, what
         assumedReturnPct: Math.round(ASSUMED_RETURN * 1000) / 10,
         base, usdIls, monthlyBudget: settings.monthlyBudget, totalValue: portfolio.totalValue, stats, sims,
         historyFrom: joint.dates[0] ?? null, historyDays: joint.rows.length, holdings, whatIf,
+        goal, goalAmount: settings.goalAmount, goalDate: settings.goalDate,
     };
 }
 

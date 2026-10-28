@@ -7,6 +7,7 @@ import { getInsight, getNews, type Headline, type Insight } from '@/lib/server/i
 import { baseline, pickDistinct, rankIdeas, scoreIdea, type Idea } from '@/lib/recommend';
 import { businessHeadline, businessLines, estimateYear, fitLines, type Estimate, type Line } from '@/lib/decision';
 import { aboutHe, hebrewName, UNIVERSE, type UniverseEntry } from '@/lib/universe';
+import { groupOf } from '@/lib/momentum';
 import { price as fmtPrice } from '@/lib/format';
 import type { Series } from '@/lib/forecast';
 import type { Currency } from '@/lib/portfolio';
@@ -118,7 +119,7 @@ export async function computeDecision(userId: string, symbol: string): Promise<D
     const { value: result } = await compute(userId);
     const idea = result.ideas.find((i) => i.symbol === symbol.toUpperCase());
     if (!idea) return null;
-    const lines = businessLines(idea.business);
+    const lines = businessLines(idea.business, ['bank', 'ins'].includes(groupOf(idea.symbol)));
     const headlines = idea.entry.kind === 'index'
         ? await getNews(idea.symbol === 'SPY' ? 'S&P 500 וול סטריט' : idea.symbol === 'QQQ' ? 'נאסד"ק מניות טכנולוגיה' : 'שווקים באירופה ויפן מניות')
         : await getNews(`"${idea.entry.he}"`);

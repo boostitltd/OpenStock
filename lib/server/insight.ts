@@ -100,37 +100,47 @@ export type InsightFacts = {
     headlines: Headline[];
 };
 
-async function generate(facts: InsightFacts): Promise<Insight | null> {
+type Part = { text: string } | { inlineData: { mimeType: string; data: string } };
+
+// One JSON answer from Gemini on Vertex; `parts` may include an inline file (a PDF as base64). Null on any failure.
+export async function geminiJson<T>(instructions: string, parts: Part[], schema: object, maxOutputTokens = 4096): Promise<T | null> {
     const token = await accessToken();
     if (!token) return null;
     const body = {
-        systemInstruction: { parts: [{ text: INSTRUCTIONS }] },
-        contents: [{ role: 'user', parts: [{ text: `הנתונים על החברה (JSON):\n${JSON.stringify(facts, null, 1)}` }] }],
+        systemInstruction: { parts: [{ text: instructions }] },
+        contents: [{ role: 'user', parts }],
         // Thinking off: it spends the output budget before the JSON is finished, and the answer arrives cut off
-        generationConfig: { temperature: 0.2, responseMimeType: 'application/json', responseSchema: SCHEMA, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 0 } },
+        generationConfig: { temperature: 0.2, responseMimeType: 'application/json', responseSchema: schema, maxOutputTokens, thinkingConfig: { thinkingBudget: 0 } },
     };
-    const res = await fetch(`https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/${REGION}/publishers/google/models/${MODEL}:generateContent`, {
-        method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(45000),
-    });
-    if (!res.ok) { console.error('Vertex', res.status, (await res.text()).slice(0, 300)); return null; }
-    const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
     try {
-        const parsed = JSON.parse(text) as Omit<Insight, 'generatedAt' | 'model'>;
-        const clean = (xs: unknown) => (Array.isArray(xs) ? xs.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).slice(0, 4) : []);
-        if (typeof parsed.story !== 'string' || !parsed.story.trim()) return null;
-        return { story: parsed.story.trim(), drivers: clean(parsed.drivers), risks: clean(parsed.risks), watch: String(parsed.watch ?? '').trim(), generatedAt: new Date().toISOString(), model: MODEL };
-    } catch {
-        console.error('Vertex returned non-JSON for', facts.symbol);
+        const res = await fetch(`https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/${REGION}/publishers/google/models/${MODEL}:generateContent`, {
+            method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(60000),
+        });
+        if (!res.ok) { console.error('Vertex', res.status, (await res.text()).slice(0, 300)); return null; }
+        const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+        return JSON.parse(data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '') as T;
+    } catch (error) {
+        console.error('Vertex call failed or returned non-JSON', error);
         return null;
     }
 }
 
-const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+export const GEMINI_MODEL = MODEL;
+export const cleanList = (xs: unknown, n = 4) => (Array.isArray(xs) ? xs.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim()).slice(0, n) : []);
+
+async function generate(facts: InsightFacts): Promise<Insight | null> {
+    const parsed = await geminiJson<Omit<Insight, 'generatedAt' | 'model'>>(INSTRUCTIONS, [{ text: `הנתונים על החברה (JSON):\n${JSON.stringify(facts, null, 1)}` }], SCHEMA);
+    if (!parsed || typeof parsed.story !== 'string' || !parsed.story.trim()) return null;
+    return { story: parsed.story.trim(), drivers: cleanList(parsed.drivers), risks: cleanList(parsed.risks), watch: String(parsed.watch ?? '').trim(), generatedAt: new Date().toISOString(), model: MODEL };
+}
+
+export const todayIL = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+
+
 
 // Today's insight for a symbol: from MongoDB if it was written today, otherwise written now and saved.
 export async function getInsight(facts: InsightFacts): Promise<Insight | null> {
-    const day = today();
+    const day = todayIL();
     try {
         await connectToDatabase();
         const saved = await StockInsight.findOne({ symbol: facts.symbol, day }).lean();

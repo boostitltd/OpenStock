@@ -44,7 +44,7 @@ const growth = (a: number, b: number) => (b / a - 1) * 100;
 const word = (v: number, up: string, down: string) => (v >= 0 ? up : down);
 
 // How the company is doing, one plain sentence per fact, best evidence first.
-export function businessLines(b: YahooBusiness | null): Line[] {
+export function businessLines(b: YahooBusiness | null, financial = false): Line[] {
     if (!b) return [{ text: 'אין ב-Yahoo נתונים עסקיים על החברה הזו.', tone: 'neutral' }];
     const out: Line[] = [];
     const y = b.yearly;
@@ -69,13 +69,14 @@ export function businessLines(b: YahooBusiness | null): Line[] {
         const cur = b.currency === 'USD' ? 'דולר' : 'ש"ח';
         out.push({ text: `מכל 100 ${cur} הכנסות נשארים לה ${m.toFixed(0)} ${cur} רווח נקי.`, tone: m >= 12 ? 'good' : m < 3 ? 'bad' : 'neutral' });
     }
-    if (b.debtToEquityPct !== null) {
+    if (financial) out.push({ text: 'בבנק או בחברת ביטוח, חוב ותזרים מזומנים הם חלק מהעסק עצמו, ולכן לא נמדדים כאן.', tone: 'neutral' });
+    if (b.debtToEquityPct !== null && !financial) {
         const d = b.debtToEquityPct;
         out.push(d > 150
             ? { text: `החוב גבוה: פי ${(d / 100).toFixed(1)} מההון העצמי. זה מכביד עליה כשהריבית גבוהה.`, tone: 'bad' }
             : d < 50 ? { text: 'החוב נמוך ביחס להון שלה.', tone: 'good' } : { text: 'החוב בינוני ביחס להון שלה.', tone: 'neutral' });
     }
-    if (b.freeCashflow !== null) {
+    if (b.freeCashflow !== null && !financial) {
         out.push(b.freeCashflow > 0
             ? { text: 'מייצרת יותר מזומנים ממה שהיא מוציאה.', tone: 'good' }
             : { text: 'בשנה האחרונה הוציאה יותר מזומנים ממה שהכניסה.', tone: 'bad' });

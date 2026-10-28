@@ -113,7 +113,30 @@ const quantile = (sorted: number[], q: number) => sorted[Math.min(sorted.length 
 
 // Block-bootstrap Monte Carlo on the joint history: each simulated day replays one real day for every holding
 // at once, so the correlations between them are kept. Contributions land every 21 trading days at the target weights.
+// The raw end values of every simulated path, sorted: for questions the percentiles don't answer, like
+// "what is the chance of reaching 500,000 by 2036".
+export function simulateEndings(input: SimInput): { endings: number[]; contributed: number } | null {
+    const r = run(input);
+    return r ? { endings: r.endings, contributed: r.contributed } : null;
+}
+
 export function simulate(input: SimInput): SimResult | null {
+    const r = run(input);
+    if (!r) return null;
+    const { endings, growthOnly, contributed, start } = r;
+    const { years } = input;
+    const paths = endings.length;
+    const medianGrowth = quantile(growthOnly, 0.5);
+    return {
+        years, paths, contributed: Math.round(contributed),
+        p10: Math.round(quantile(endings, 0.1)), p25: Math.round(quantile(endings, 0.25)), p50: Math.round(quantile(endings, 0.5)),
+        p75: Math.round(quantile(endings, 0.75)), p90: Math.round(quantile(endings, 0.9)),
+        probBelowContributed: round(endings.filter((e) => e < contributed).length / paths * 100),
+        medianAnnualPct: start > 0 ? round(((medianGrowth / start) ** (1 / years) - 1) * 100) : 0,
+    };
+}
+
+function run(input: SimInput): { endings: number[]; growthOnly: number[]; contributed: number; start: number } | null {
     const { values, monthly, weights, years } = input;
     const rows = input.driftAnnual === undefined ? input.rows : recentre(input.rows, input.driftAnnual);
     const paths = input.paths ?? 2000, block = input.block ?? 20, random = rng(input.seed ?? 42);
@@ -143,14 +166,36 @@ export function simulate(input: SimInput): SimResult | null {
     }
     endings.sort((a, b) => a - b);
     growthOnly.sort((a, b) => a - b);
-    const medianGrowth = quantile(growthOnly, 0.5);
-    return {
-        years, paths, contributed: Math.round(contributed),
-        p10: Math.round(quantile(endings, 0.1)), p25: Math.round(quantile(endings, 0.25)), p50: Math.round(quantile(endings, 0.5)),
-        p75: Math.round(quantile(endings, 0.75)), p90: Math.round(quantile(endings, 0.9)),
-        probBelowContributed: round(endings.filter((e) => e < contributed).length / paths * 100),
-        medianAnnualPct: start > 0 ? round(((medianGrowth / start) ** (1 / years) - 1) * 100) : 0,
-    };
+    return { endings, growthOnly, contributed, start };
+}
+
+export type GoalResult = {
+    amount: number; date: string; years: number;
+    chancePct: number;                 // with today's portfolio and monthly amount
+    requiredMonthly: number | null;    // for an 80% chance; null if even a large amount isn't enough
+    medianAtDate: number;
+};
+
+// Chance of having `amount` by `years` from now, and the monthly amount that makes it 80%.
+export function planGoal(input: Omit<SimInput, 'years' | 'monthly'> & { monthly: number; amount: number; years: number; date: string; target?: number }): GoalResult | null {
+    const target = input.target ?? 0.8;
+    const at = (monthly: number) => simulateEndings({ ...input, monthly, years: input.years, paths: input.paths ?? 800 });
+    const now = at(input.monthly);
+    if (!now) return null;
+    const chance = now.endings.filter((e) => e >= input.amount).length / now.endings.length;
+    const reach = (monthly: number) => { const r = at(monthly)!; return r.endings.filter((e) => e >= input.amount).length / r.endings.length; };
+    let required: number | null = null;
+    if (chance >= target) required = input.monthly;
+    else {
+        let lo = input.monthly, hi = Math.max(1000, input.monthly * 2);
+        let guard = 0;
+        while (reach(hi) < target && guard++ < 12) hi *= 2;
+        if (reach(hi) >= target) {
+            for (let k = 0; k < 18; k++) { const mid = (lo + hi) / 2; if (reach(mid) >= target) hi = mid; else lo = mid; }
+            required = Math.ceil(hi / 50) * 50;
+        }
+    }
+    return { amount: input.amount, date: input.date, years: input.years, chancePct: Math.round(chance * 100), requiredMonthly: required, medianAtDate: Math.round(quantile(now.endings, 0.5)) };
 }
 
 // Portfolio-level return, volatility and worst drawdown of the weighted mix over the aligned history.

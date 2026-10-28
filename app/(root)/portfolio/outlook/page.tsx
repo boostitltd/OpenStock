@@ -3,6 +3,7 @@ import { Activity, Briefcase, CalendarCheck, Lightbulb, Telescope, TrendingDown 
 import Panel from "@/components/Panel";
 import OutlookHoldings from "@/components/portfolio/OutlookHoldings";
 import WhatIfCard from "@/components/portfolio/WhatIfCard";
+import GoalCard from "@/components/portfolio/GoalCard";
 import { getOutlook } from "@/lib/actions/outlook.actions";
 import { dateHe, money, pct, yearsHe } from "@/lib/format";
 
@@ -106,6 +107,10 @@ export default async function OutlookPage({ searchParams }: { searchParams: Prom
                     </Panel>
                 </>
             )}
+
+            <Panel title="המטרה שלך" sub="כמה כסף אתה רוצה, ועד מתי. המערכת אומרת מה הסיכוי וכמה צריך בחודש" className="mb-3">
+                <GoalCard goal={outlook.goal} amount={outlook.goalAmount} date={outlook.goalDate} monthly={outlook.monthlyBudget} />
+            </Panel>
 
             <Panel title="מה יקרה אם אוסיף מניה?" sub="אותה היסטוריה ואותה סימולציה, עם המועמדת במשקל שבוחרים">
                 <WhatIfCard whatIf={outlook.whatIf} base={base} hasHoldings={holdings.length > 0} initialSymbol={add ?? ''} initialPct={pctParam ?? '10'} />

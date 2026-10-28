@@ -9,9 +9,17 @@ import { computeIdeas } from '@/lib/server/ideas';
 import { computeOutlook } from '@/lib/server/outlook';
 import { loadPortfolio } from '@/lib/server/portfolio-data';
 import { planBuyDay } from '@/lib/portfolio';
+import { computeStrategy } from '@/lib/server/strategy';
+import { computeThesisChecks } from '@/lib/server/thesis';
+import { computeRadar } from '@/lib/server/radar';
 
 export async function buildBriefNow(userId: string): Promise<BriefNow> {
-    const [outlook, ideas, loaded] = await Promise.all([computeOutlook(userId), computeIdeas(userId), loadPortfolio(userId)]);
+    const [outlook, ideas, loaded, strategy, thesis] = await Promise.all([
+        computeOutlook(userId), computeIdeas(userId), loadPortfolio(userId),
+        computeStrategy(userId).catch((e) => { console.error('Brief strategy failed', e); return null; }),
+        computeThesisChecks(userId).catch((e) => { console.error('Brief thesis failed', e); return []; }),
+    ]);
+    const radar = await computeRadar(userId, (strategy?.buys ?? []).map((b) => b.symbol)).catch((e) => { console.error('Brief radar failed', e); return null; });
     const { portfolio, settings, quotes } = loaded;
     const hasTargets = settings.targets.some((t) => t.weightPct > 0);
     const plan = hasTargets ? planBuyDay(portfolio, settings.targets, settings.monthlyBudget, settings.driftTolerancePct, quotes) : null;
@@ -32,6 +40,20 @@ export async function buildBriefNow(userId: string): Promise<BriefNow> {
             sells: (plan?.rows ?? []).filter((r) => r.action === 'SELL').map((r) => ({ symbol: r.symbol, shares: r.shares, amountBase: r.amountBase, currency: r.currency, price: r.price })),
             leftover: plan?.leftover ?? 0,
         },
+        strategy: strategy ? {
+            buys: strategy.buys.map((b) => ({ name: b.name, rank: b.rank, momentumPct: b.momentumPct, shares: b.shares, amount: b.amount })),
+            sells: strategy.holdings.filter((h) => h.action === 'sell').map((h) => ({ name: h.name, rank: h.rank, gain: h.gain, tax: h.tax })),
+            keeps: strategy.holdings.filter((h) => h.action === 'keep').map((h) => ({ name: h.name, rank: h.rank })),
+            backtest: strategy.backtests[0] ? { strategyPct: strategy.backtests[0].strategyPct, equalPct: strategy.backtests[0].equalPct, indexPct: strategy.backtests[0].indexPct } : null,
+        } : null,
+        thesis: thesis.map((t) => ({ name: t.name, status: t.status, headline: t.headline })),
+        radar: radar ? {
+            political: radar.items.map((i) => ({ explanation: i.explanation, affects: i.affects, direction: i.direction, source: i.source })),
+            insiders: radar.insiders.map((i) => ({ name: i.name, text: i.text })),
+            congress: radar.congress.top.map((c) => ({ ticker: c.ticker, members: c.members.length })),
+        } : null,
+        goal: outlook.goal ? { amount: outlook.goal.amount, date: outlook.goal.date, chancePct: outlook.goal.chancePct, requiredMonthly: outlook.goal.requiredMonthly } : null,
+        harvest: (strategy?.harvest ?? []).map((h) => ({ name: h.name, saving: h.saving })),
     };
 }
 

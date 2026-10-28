@@ -47,6 +47,8 @@ export interface IPortfolioSettings extends Document {
     monthlyBudget: number;
     driftTolerancePct: number; // a holding this many portfolio-points over its target is a sell candidate
     targets: { symbol: string; weightPct: number }[];
+    goalAmount?: number | null;   // "I want this much..."
+    goalDate?: Date | null;       // "...by then"
 }
 
 const PortfolioSettingsSchema = new Schema<IPortfolioSettings>(
@@ -59,6 +61,8 @@ const PortfolioSettingsSchema = new Schema<IPortfolioSettings>(
             type: [{ symbol: { type: String, uppercase: true, trim: true }, weightPct: { type: Number, min: 0, max: 100 } }],
             default: [],
         },
+        goalAmount: { type: Number, default: null, min: 0 },
+        goalDate: { type: Date, default: null },
     },
     { timestamps: true }
 );

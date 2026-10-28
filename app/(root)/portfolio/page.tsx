@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { CalendarCheck, Lightbulb, PlusCircle, Telescope, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Suspense } from "react";
+import ThesisPanel, { ThesisSkeleton } from "@/components/portfolio/ThesisPanel";
+import { CalendarCheck, Lightbulb, PlusCircle, Sigma, Telescope, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import Panel from "@/components/Panel";
 import DataFreshness from "@/components/DataFreshness";
 import HoldingsTable from "@/components/portfolio/HoldingsTable";
@@ -36,6 +38,7 @@ export default async function PortfolioPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <Link href="/portfolio/strategy" className="btn btn-ghost"><Sigma /> השיטה</Link>
                     <Link href="/portfolio/ideas" className="btn btn-ghost"><Lightbulb /> מה לקנות</Link>
                     <Link href="/portfolio/outlook" className="btn btn-ghost"><Telescope /> תחזית</Link>
                     <Link href="/portfolio/buy-day" className="btn btn-ghost"><CalendarCheck /> יום קנייה</Link>
@@ -61,6 +64,12 @@ export default async function PortfolioPage() {
                     <TradesList trades={trades} />
                 </Panel>
             </div>
+
+            <Panel title="האם הסיבה שבגללה קנית עדיין נכונה?" sub="נבדק מול התוצאות העסקיות והחדשות האחרונות, פעם ביום" className="mt-3">
+                <Suspense fallback={<ThesisSkeleton />}>
+                    <ThesisPanel />
+                </Suspense>
+            </Panel>
         </>
     );
 }

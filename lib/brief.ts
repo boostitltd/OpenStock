@@ -23,6 +23,16 @@ export type BriefNow = {
     at: Date; base: Currency; totalValue: number; monthlyBudget: number; assumedReturnPct: number;
     sims: BriefSim[]; holdings: BriefHolding[]; ideas: BriefIdea[];
     plan: { hasTargets: boolean; buys: BriefBuy[]; sells: BriefBuy[]; leftover: number } | null;
+    strategy?: {
+        buys: { name: string; rank: number; momentumPct: number; shares: number; amount: number }[];
+        sells: { name: string; rank: number | null; gain: number; tax: number }[];
+        keeps: { name: string; rank: number | null }[];
+        backtest: { strategyPct: number; equalPct: number; indexPct: number } | null;
+    } | null;
+    thesis?: { name: string; status: 'intact' | 'weakened' | 'broken' | 'unclear'; headline: string }[];
+    radar?: { political: { explanation: string; affects: string[]; direction: 'up' | 'down' | 'unclear'; source: 'trump' | 'whitehouse' }[]; insiders: { name: string; text: string }[]; congress: { ticker: string; members: number }[] } | null;
+    goal?: { amount: number; date: string; chancePct: number; requiredMonthly: number | null } | null;
+    harvest?: { name: string; saving: number }[];
 };
 
 export type BriefPrev = {
@@ -31,7 +41,7 @@ export type BriefPrev = {
     ideas: { symbol: string; verdict: string }[];
 } | null;
 
-export type BriefEvent = { symbol: string; kind: 'target' | 'below-ma' | 'above-ma' | 'off-high' | 'earnings' | 'analyst'; text: string; urgent: boolean };
+export type BriefEvent = { symbol: string; kind: 'target' | 'below-ma' | 'above-ma' | 'off-high' | 'earnings' | 'analyst' | 'strategy-sell' | 'thesis'; text: string; urgent: boolean };
 
 const EARNINGS_DAYS = 14;
 
@@ -65,6 +75,13 @@ export function holdingEvents(now: BriefNow, prev: BriefPrev): BriefEvent[] {
             const up = h.analystTarget > p.analystTarget;
             out.push({ symbol: h.symbol, kind: 'analyst', urgent: false, text: `האנליסטים ${up ? 'העלו' : 'הורידו'} את יעד המחיר של ${name}: מ-${price(p.analystTarget, h.currency)} ל-${price(h.analystTarget, h.currency)}${h.analysts && h.analysts < 3 ? ` (רק ${h.analysts === 1 ? 'אנליסט אחד' : `${h.analysts} אנליסטים`})` : ''}.` });
         }
+    }
+    for (const s of now.strategy?.sells ?? []) {
+        out.push({ symbol: s.name, kind: 'strategy-sell', urgent: true, text: `לפי השיטה הגיע הזמן למכור את ${s.name}: היא ירדה למקום ${s.rank ?? '?'}, מחוץ ל-15 המובילות.${s.tax > 0 ? ` המס על המכירה בערך ${money(s.tax, now.base)}.` : ''}` });
+    }
+    for (const t of now.thesis ?? []) {
+        if (t.status === 'broken') out.push({ symbol: t.name, kind: 'thesis', urgent: true, text: `הסיבה שבגללה קנית את ${t.name} נשברה: ${t.headline}` });
+        else if (t.status === 'weakened') out.push({ symbol: t.name, kind: 'thesis', urgent: false, text: `הסיבה שבגללה קנית את ${t.name} נחלשה: ${t.headline}` });
     }
     return out.sort((a, b) => Number(b.urgent) - Number(a.urgent));
 }
@@ -146,6 +163,7 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
         if (drivers.length) parts.push(p(`מה הזיז את התחזית: ${drivers.map(e).join('. ')}.`));
         if (!now.monthlyBudget) parts.push(p('עוד לא הוגדר סכום חודשי, ולכן התחזית לא כוללת את ההפקדות. מגדירים אותו בעמוד יום קנייה.', C.sub, 13.5));
     } else parts.push(p('אין עוד מספיק היסטוריה משותפת לסימולציה.'));
+    if (now.goal) parts.push(p(`<b>המטרה שלך:</b> ${e(money(now.goal.amount, base))} עד סוף ${now.goal.date.slice(0, 4)}. הסיכוי להגיע אליה כרגע: <b style="color:${now.goal.chancePct >= 80 ? C.up : now.goal.chancePct >= 50 ? C.brand : C.down};">${now.goal.chancePct}%</b>${now.goal.requiredMonthly && now.goal.chancePct < 80 ? `. כדי שיהיה 80%, צריך בערך ${e(money(now.goal.requiredMonthly, base))} בחודש` : ''}.`, C.text, 14));
 
     // 3. Holdings
     parts.push(h2('המניות שלך'));
@@ -166,9 +184,28 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
     const heavy = now.holdings.find((h) => h.weightPct >= 50);
     if (heavy) parts.push(p(`${e(hebrewName(heavy.symbol, heavy.name))} היא ${heavy.weightPct.toFixed(0)}% מהתיק. כשמניה אחת היא רוב התיק, נפילה שלה היא נפילה של כל התיק. הקנייה הבאה כדאי שתלך למשהו אחר.`, C.text, 14));
 
+    // 3b. Reasons
+    if (now.thesis?.length) {
+        parts.push(h2('האם הסיבות שלך עדיין נכונות'));
+        const TH: Record<string, [string, string]> = { intact: ['מחזיקה', C.up], weakened: ['נחלשה', C.brand], broken: ['נשברה', C.down], unclear: ['כללית מדי לבדיקה', C.faint] };
+        parts.push(`<ul style="${FF}margin:4px 0 0;padding-right:18px;font-size:14px;line-height:1.7;color:${C.sub};">${now.thesis.map((t) => `<li><b style="color:${C.text};">${e(t.name)}</b>: <span style="color:${TH[t.status][1]};">${TH[t.status][0]}</span>. ${e(t.headline)}</li>`).join('')}</ul>`);
+    }
+
     // 4. This month's buy
     parts.push(h2('מה לקנות החודש'));
+    if (now.strategy?.buys.length) {
+        const st = now.strategy;
+        parts.push(p('לפי השיטה: קונים את 5 המניות שעלו הכי הרבה בשנה האחרונה, אחת מכל ענף, ומוכרים רק מניה שיוצאת מ-15 המובילות.', C.sub, 14));
+        parts.push(table(['מניה', 'מקום', 'עלתה בשנה', now.monthlyBudget > 0 ? 'כמה לקנות' : ''], st.buys.map((b) => [
+            cell(e(b.name), { bold: true }), cell(String(b.rank)), cell(ltr(`+${b.momentumPct.toFixed(0)}%`), { color: C.up }),
+            cell(now.monthlyBudget > 0 ? (b.shares > 0 ? `${b.shares} מניות, ${e(money(b.amount, base))}` : 'פחות ממניה אחת') : ''),
+        ])));
+        if (st.keeps.length) parts.push(p(`להמשיך להחזיק: ${st.keeps.map((k) => `${e(k.name)} (מקום ${k.rank})`).join(', ')}.`, C.sub, 13.5));
+        if (st.backtest) parts.push(p(`ב-20 השנים האחרונות, אחרי מס, השיטה הניבה ${st.backtest.strategyPct}% בשנה, מול ${st.backtest.equalPct}% לקנייה שווה של כל המניות ו-${st.backtest.indexPct}% למדד ת"א 125. בעבר זה עבד, וזה לא מבטיח את העתיד.`, C.faint, 12.5));
+        if (!(now.monthlyBudget > 0)) parts.push(p('עוד לא הגדרת סכום חודשי, ולכן אין כמויות. מגדירים אותו בעמוד יום קנייה.', C.sub, 13.5));
+    }
     if (now.plan?.hasTargets && now.monthlyBudget > 0) {
+        parts.push(p('לפי משקלי היעד שקבעת:', C.text, 14));
         if (now.plan.buys.length) {
             parts.push(table(['מניה', 'כמה מניות', 'בערך'], now.plan.buys.map((b) => [
                 cell(`${e(hebrewName(b.symbol))} <span style="color:${C.faint};font-size:12px;">${ltr(b.symbol)}</span>`, { bold: true }),
@@ -177,12 +214,25 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
             parts.push(p(`לפי משקלי היעד שקבעת ו-${e(money(now.monthlyBudget, base))} בחודש${now.plan.leftover > 0 ? `. נשארים ${e(money(now.plan.leftover, base))} כי קונים מניות שלמות` : ''}.`, C.faint, 12.5));
         } else parts.push(p('התיק כבר על משקלי היעד. הכסף של החודש יכול לחכות, או ללכת לרעיון חדש מהרשימה למטה.'));
         if (now.plan.sells.length) parts.push(p(`למכור לפי התוכנית: ${now.plan.sells.map((s) => `${e(hebrewName(s.symbol))} (${s.shares})`).join(', ')}.`, C.down));
-    } else {
+    } else if (!now.strategy?.buys.length) {
         parts.push(p('עוד לא הגדרת סכום חודשי ומשקלי יעד, ולכן אין תוכנית קנייה מדויקת. ההמלצות למטה הן הכיוון.'));
+    }
+    if (now.harvest?.length && now.at.getMonth() >= 10) {
+        parts.push(p(`<b>לחסוך מס לפני סוף השנה:</b> ${now.harvest.map((h) => `מכירה של ${e(h.name)} מקזזת בערך ${e(money(h.saving, base))}`).join('; ')}. כדאי לוודא מול רואה החשבון.`, C.text, 14));
+    }
+
+    // 4b. Radar
+    const rd = now.radar;
+    if (rd && (rd.political.length || rd.insiders.length || rd.congress.length)) {
+        parts.push(h2('ראדאר: פוליטיקה ומה שקורה מבפנים'));
+        const DIRH: Record<string, [string, string]> = { up: ['יכול לעזור', C.up], down: ['יכול להזיק', C.down], unclear: ['כיוון לא ברור', C.faint] };
+        if (rd.political.length) parts.push(`<ul style="${FF}margin:4px 0 0;padding-right:18px;font-size:14px;line-height:1.7;color:${C.sub};">${rd.political.slice(0, 3).map((x) => `<li><b style="color:${C.text};">${e(x.affects.join(', '))}</b> <span style="color:${DIRH[x.direction][1]};">(${DIRH[x.direction][0]})</span>: ${e(x.explanation)}</li>`).join('')}</ul>`);
+        if (rd.insiders.length) parts.push(p(`מבפנים: ${rd.insiders.slice(0, 3).map((x) => `${e(x.name)}: ${e(x.text)}`).join(' · ')}`, C.sub, 13.5));
+        if (rd.congress.length) parts.push(p(`חברי בית הנבחרים קנו בחודש האחרון בעיקר: ${rd.congress.slice(0, 4).map((c) => `${ltr(c.ticker)} (${c.members} ${c.members === 1 ? 'חבר' : 'חברים'})`).join(', ')}. מידע, לא המלצה: הדיווח מגיע באיחור של עד 45 יום.`, C.faint, 12.5));
     }
 
     // 5. Ideas
-    parts.push(h2('רעיונות לקנייה'));
+    parts.push(h2('לגיוון התיק'));
     const ideaRow = (i: BriefIdea) => `<tr><td style="${FF}padding:10px 0;border-bottom:1px solid ${C.line};">
         <div style="font-size:15px;color:${C.text};font-weight:600;">${e(i.he)} <span style="color:${C.faint};font-size:12px;font-weight:400;">${ltr(i.symbol)}</span>${!prevTop.has(i.symbol) && prev ? ` <span style="color:${C.brand};font-size:12px;">חדש ברשימה</span>` : ''}</div>
         ${i.about ? `<div style="font-size:13.5px;color:${C.sub};line-height:1.6;">${e(i.about)}</div>` : ''}

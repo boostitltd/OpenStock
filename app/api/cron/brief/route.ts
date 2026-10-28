@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { briefRecipients, runBrief } from '@/lib/server/brief';
+import { ingestActions, ingestTruth } from '@/lib/server/radar';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -18,6 +19,8 @@ const authorised = (req: NextRequest) => {
 export async function POST(req: NextRequest) {
     if (!authorised(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const dry = req.nextUrl.searchParams.get('dry') === '1';
+    // The radar reads the last week of posts: make sure today's are in, even if the daily job missed
+    if (!dry) await Promise.all([ingestTruth(), ingestActions()]);
     const users = await briefRecipients();
     const results = [];
     for (const userId of users) {
