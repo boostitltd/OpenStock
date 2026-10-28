@@ -125,6 +125,7 @@ export async function runBrief(userId: string, opts: { dry?: boolean; appUrl?: s
 // Everyone with at least one trade or saved settings.
 export async function briefRecipients(): Promise<string[]> {
     await connectToDatabase();
-    const [a, b] = await Promise.all([Trade.distinct('userId'), PortfolioSettings.distinct('userId')]);
-    return [...new Set([...a, ...b].map(String))];
+    // Anyone who already got a brief keeps getting it, even after emptying the portfolio: "what to buy" matters most then.
+    const [a, b, c] = await Promise.all([Trade.distinct('userId'), PortfolioSettings.distinct('userId'), BriefSnapshot.distinct('userId')]);
+    return [...new Set([...a, ...b, ...c].map(String))];
 }
