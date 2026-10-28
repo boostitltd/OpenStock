@@ -130,7 +130,9 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
         urgent.length ? (urgent.length === 1 ? 'דבר אחד לטפל בו' : `${urgent.length} דברים לטפל בהם`) : 'אין מה לטפל השבוע',
         `התיק ${money(now.totalValue, base)}${valueMove !== null ? ` (${pct(valueMove)})` : ''}`,
     ];
-    const subject = `הסיכום השבועי של התיק: ${subjectBits.join(', ')}`;
+    // Nothing held yet: the brief is only about what to buy, with no value, forecast or holdings to report
+    const empty = now.holdings.length === 0 && !(now.totalValue > 0);
+    const subject = empty ? 'הסיכום השבועי: מה לקנות החודש' : `הסיכום השבועי של התיק: ${subjectBits.join(', ')}`;
 
     const parts: string[] = [];
     parts.push(`<h1 style="${FF}margin:0 0 6px;font-size:22px;color:${C.text};">הסיכום השבועי של התיק</h1>`);
@@ -138,15 +140,18 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
 
     // 1. Bottom line
     parts.push(h2('השורה התחתונה'));
-    const line = [`התיק שווה <b style="color:${C.text};">${e(money(now.totalValue, base))}</b>`];
-    if (valueMove !== null) line.push(`<span style="color:${valueMove >= 0 ? C.up : C.down};">${ltr(pct(valueMove))}</span> מאז הסיכום הקודם`);
-    parts.push(p(line.join(', ') + '.'));
-    if (urgent.length) parts.push(p(`<b style="color:${C.down};">לטפל:</b> ${urgent.map((u) => e(u.text)).join(' ')}`, C.text));
+    if (empty) parts.push(p('התיק עוד ריק. אחרי שקונים, רושמים את הקנייה בעמוד התיק עם הסיבה, והמערכת מתחילה לעקוב אחרי המניה ולבדוק אם הסיבה עדיין נכונה.'));
+    else {
+        const line = [`התיק שווה <b style="color:${C.text};">${e(money(now.totalValue, base))}</b>`];
+        if (valueMove !== null) line.push(`<span style="color:${valueMove >= 0 ? C.up : C.down};">${ltr(pct(valueMove))}</span> מאז הסיכום הקודם`);
+        parts.push(p(line.join(', ') + '.'));
+    }
+    if (empty) { /* nothing to handle yet */ } else if (urgent.length) parts.push(p(`<b style="color:${C.down};">לטפל:</b> ${urgent.map((u) => e(u.text)).join(' ')}`, C.text));
     else parts.push(p('אין מניה שהגיעה ליעד או ששברה מגמה. אין צורך לעשות כלום חוץ מהקנייה החודשית.'));
 
     // 2. Forecast
-    parts.push(h2('התחזית'));
-    if (now.sims.length) {
+    if (!empty) parts.push(h2('התחזית'));
+    if (empty) { /* no forecast without holdings */ } else if (now.sims.length) {
         const rows = now.sims.map((s) => {
             const b = prevSims.get(s.years);
             const d = b ? s.probBelowContributed - b.probBelowContributed : null;
@@ -166,9 +171,9 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
     if (now.goal) parts.push(p(`<b>המטרה שלך:</b> ${e(money(now.goal.amount, base))} עד סוף ${now.goal.date.slice(0, 4)}. הסיכוי להגיע אליה כרגע: <b style="color:${now.goal.chancePct >= 80 ? C.up : now.goal.chancePct >= 50 ? C.brand : C.down};">${now.goal.chancePct}%</b>${now.goal.requiredMonthly && now.goal.chancePct < 80 ? `. כדי שיהיה 80%, צריך בערך ${e(money(now.goal.requiredMonthly, base))} בחודש` : ''}.`, C.text, 14));
 
     // 3. Holdings
-    parts.push(h2('המניות שלך'));
+    if (!empty) parts.push(h2('המניות שלך'));
     const prevH = new Map((prev?.holdings ?? []).map((h) => [h.symbol, h]));
-    parts.push(table(['מניה', 'מחיר', 'מאז הסיכום הקודם', 'משקל', 'יעד שלך'], now.holdings.map((h) => {
+    if (!empty) parts.push(table(['מניה', 'מחיר', 'מאז הסיכום הקודם', 'משקל', 'יעד שלך'], now.holdings.map((h) => {
         const ph = prevH.get(h.symbol);
         const move = ph?.price && h.price ? (h.price / ph.price - 1) * 100 : null;
         return [

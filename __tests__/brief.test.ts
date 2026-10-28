@@ -106,3 +106,14 @@ describe('arena line', () => {
         expect(html).toContain('במקום 2 מתוך 9');
     });
 });
+
+describe('empty portfolio', () => {
+    it('talks only about what to buy, with no value, forecast or holdings', () => {
+        const b = composeBrief(now({ holdings: [], totalValue: 0, sims: [] }), prev(), 'https://x.test');
+        expect(b.subject).toBe('הסיכום השבועי: מה לקנות החודש');
+        expect(b.html).toContain('התיק עוד ריק');
+        expect(b.html).not.toContain('-100');
+        expect(b.html).not.toContain('המניות שלך');
+        expect(b.html).not.toContain('התחזית');
+    });
+});
