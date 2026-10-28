@@ -6,6 +6,7 @@ import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { savePortfolioSettings, type PortfolioSettingsRow } from "@/lib/actions/portfolio.actions";
 import { cn } from "@/lib/utils";
+import SymbolPicker from "@/components/portfolio/SymbolPicker";
 import type { Currency } from "@/lib/portfolio";
 
 type Props = { settings: PortfolioSettingsRow; heldSymbols: string[] };
@@ -94,7 +95,7 @@ export default function TargetsEditor({ settings, heldSymbols }: Props) {
                     ))}
                 </ul>
                 <form onSubmit={(e) => { e.preventDefault(); add(newSymbol); }} className="mt-1 flex gap-2">
-                    <span className={cn(field, 'flex-1')}><input value={newSymbol} onChange={(e) => setNewSymbol(e.target.value)} placeholder="Add a symbol, e.g. POLI.TA" className={cn(input, 'mono uppercase')} /></span>
+                    <span className={cn(field, 'flex-1')}><SymbolPicker value={newSymbol} onChange={setNewSymbol} placeholder="Add by company name or symbol" className="min-w-0 flex-1" inputClassName={input} /></span>
                     <button type="submit" className="btn btn-ghost h-10" disabled={!newSymbol.trim()}><Plus /> Add</button>
                 </form>
                 {missing.length > 0 && (

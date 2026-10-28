@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { addTrade } from "@/lib/actions/portfolio.actions";
+import SymbolPicker from "@/components/portfolio/SymbolPicker";
 import { symbolCurrency, type Currency } from "@/lib/portfolio";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -102,9 +103,8 @@ export default function AddTradeModal({ children, symbol: initialSymbol = '', si
                         <label className="flex flex-col gap-1.5">
                             <span className="form-label">Symbol</span>
                             <span className={field}>
-                                <input value={symbol} onChange={(e) => setSymbol(e.target.value)} required autoFocus={!initialSymbol} placeholder="TEVA.TA or TEVA"
-                                    className={cn(input, 'mono uppercase')} />
-                                {sym && <span className="mono text-xs text-faint">{currency}</span>}
+                                <SymbolPicker value={symbol} onChange={setSymbol} autoFocus={!initialSymbol} placeholder="Company name or symbol" className="min-w-0 flex-1" inputClassName={input} />
+                                {sym && <span className="mono text-xs text-faint" title={currency === 'ILS' ? 'Tel Aviv listing, priced in shekels' : 'Priced in dollars'}>{currency}</span>}
                             </span>
                         </label>
                         <label className="flex flex-col gap-1.5">
