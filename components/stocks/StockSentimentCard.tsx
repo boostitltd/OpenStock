@@ -77,7 +77,7 @@ export default function StockSentimentCard({ insight }: StockSentimentCardProps)
                                 {formatCompactNumber(source.metricValue)} {METRIC_HE[source.metricLabel] ?? source.metricLabel.toLowerCase()}
                             </p>
                         </div>
-                        <div className="num text-end text-[12.5px]">
+                        <div className="num text-left text-[12.5px]">
                             <p className="font-semibold text-foreground">{formatScore(source.buzzScore, '')}</p>
                             <p className="text-faint">באזז</p>
                         </div>

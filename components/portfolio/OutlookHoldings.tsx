@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { HoldingOutlook } from "@/lib/server/outlook";
 import type { Currency } from "@/lib/portfolio";
-import { dateHe, money, pct } from "@/lib/format";
+import { changeWords, dateHe, money, pct, price } from "@/lib/format";
 import { formatPrice } from "@/lib/utils";
 import { hebrewName } from "@/lib/universe";
 
@@ -13,7 +13,7 @@ function Row({ label, value, className = '' }: { label: string; value: React.Rea
     return (
         <div className="flex items-baseline justify-between gap-3 text-[13px]">
             <span className="text-faint">{label}</span>
-            <span className={`num text-end ${className}`}>{value}</span>
+            <span className={`num text-left ${className}`}>{value}</span>
         </div>
     );
 }
@@ -25,7 +25,7 @@ export default function OutlookHoldings({ holdings, base }: { holdings: HoldingO
                 const f = h.fundamentals, s = h.stats, sim = h.sim1y;
                 const signals: { text: string; kind: 'up' | 'down' | 'brand' }[] = [];
                 if (h.targetReached) signals.push({ text: 'הגיעה ליעד שלך', kind: 'brand' });
-                if (s?.vsMa200Pct != null) signals.push(s.vsMa200Pct >= 0 ? { text: 'מעל ממוצע 200 הימים', kind: 'up' } : { text: 'מתחת לממוצע 200 הימים', kind: 'down' });
+                if (s?.vsMa200Pct != null) signals.push(s.vsMa200Pct >= 0 ? { text: 'במגמת עלייה', kind: 'up' } : { text: 'במגמת ירידה', kind: 'down' });
                 if (s && s.fromHigh52wPct <= -15) signals.push({ text: `${Math.abs(s.fromHigh52wPct).toFixed(0)}% מתחת לשיא השנתי`, kind: 'down' });
                 return (
                     <section key={h.symbol} className="flex flex-col gap-3 rounded-[12px] bg-page/60 p-4 shadow-[inset_0_0_0_1px_var(--line)]">
@@ -45,39 +45,39 @@ export default function OutlookHoldings({ holdings, base }: { holdings: HoldingO
 
                         <div className="flex flex-col gap-1.5">
                             <p className="kicker">ההבטחה שלך</p>
-                            <Row label="יעד מכירה" value={h.targetPrice ? `${formatPrice(h.targetPrice, h.currency)}${h.targetReached ? ' (הושג)' : h.targetDistancePct != null ? ` (עוד ${h.targetDistancePct.toFixed(1)}%)` : ''}` : 'לא נקבע'} className={h.targetReached ? 'text-brand-ink' : 'text-foreground'} />
+                            <Row label="יעד מכירה" value={h.targetPrice ? `${price(h.targetPrice, h.currency)}${h.targetReached ? ', הושג' : h.targetDistancePct != null ? `, חסרים עוד ${h.targetDistancePct.toFixed(0)}%` : ''}` : 'לא נקבע'} className={h.targetReached ? 'text-brand-ink' : 'text-foreground'} />
                             {h.thesis && <p className="text-[12.5px] leading-snug text-muted-foreground">&quot;{h.thesis}&quot;</p>}
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <p className="kicker">12 החודשים הבאים: התנודות שלה, מגמה ממוצעת של שוק</p>
+                            <p className="kicker">מה יכול לקרות לחלק הזה בתיק בשנה הקרובה</p>
                             {sim ? (
                                 <>
-                                    <Row label="תרחיש רע (10%)" value={money(sim.p10, base)} className="text-down" />
-                                    <Row label="אמצע" value={money(sim.p50, base)} className="font-semibold text-foreground" />
-                                    <Row label="תרחיש טוב (90%)" value={money(sim.p90, base)} className="text-up" />
-                                    <Row label="סיכוי להיות בהפסד" value={`${sim.probBelowContributed.toFixed(0)}%`} className="text-muted-foreground" />
+                                    <Row label="שנה רעה (1 מכל 10)" value={money(sim.p10, base)} className="text-down" />
+                                    <Row label="שנה רגילה" value={money(sim.p50, base)} className="font-semibold text-foreground" />
+                                    <Row label="שנה טובה (1 מכל 10)" value={money(sim.p90, base)} className="text-up" />
+                                    <Row label="הסיכוי להיות בהפסד בעוד שנה" value={`${sim.probBelowContributed.toFixed(0)}%`} className="text-muted-foreground" />
                                 </>
                             ) : <p className="text-[12.5px] text-faint">אין מספיק היסטוריה</p>}
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <p className="kicker">אנליסטים ומכפילים</p>
-                            <Row label="יעד ממוצע" value={f?.targetMeanPrice ? `${formatPrice(f.targetMeanPrice, h.currency)} (${pct(h.analystUpsidePct)}) · ${f.analysts === 1 ? 'אנליסט אחד' : `${f.analysts ?? '?'} אנליסטים`}` : 'אין כיסוי ב-Yahoo'} className={tone(h.analystUpsidePct)} />
-                            {f?.recommendation && <Row label="המלצה" value={REC[f.recommendation] ?? f.recommendation} className="text-foreground" />}
-                            <Row label="מכפיל רווח · צפוי" value={`${f?.trailingPE ? f.trailingPE.toFixed(1) : '—'} · ${f?.forwardPE ? f.forwardPE.toFixed(1) : '—'}`} className="text-foreground" />
-                            <Row label="תשואת דיבידנד" value={f?.dividendYieldPct != null ? `${f.dividendYieldPct.toFixed(2)}%` : '—'} className="text-foreground" />
+                            <p className="kicker">מה אומרים עליה</p>
+                            <Row label="המחיר שהאנליסטים צופים" value={f?.targetMeanPrice ? `${price(f.targetMeanPrice, h.currency)}, ${h.analystUpsidePct != null ? changeWords(h.analystUpsidePct) : ''} · ${f.analysts === 1 ? 'אנליסט אחד' : `${f.analysts ?? '?'} אנליסטים`}` : 'אין אנליסטים שמכסים אותה'} className={tone(h.analystUpsidePct)} />
+                            {f?.recommendation && <Row label="המלצת האנליסטים" value={REC[f.recommendation] ?? f.recommendation} className="text-foreground" />}
+                            <Row label="המחיר שווה כמה שנות רווח" value={f?.trailingPE ? `${f.trailingPE.toFixed(0)} שנים` : '—'} className="text-foreground" />
+                            <Row label="דיבידנד בשנה" value={f?.dividendYieldPct != null ? `${f.dividendYieldPct.toFixed(2)}%` : '—'} className="text-foreground" />
                             <Row label="הדוח הבא" value={f?.nextEarnings ? dateHe(f.nextEarnings) : '—'} className="text-foreground" />
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <p className="kicker">איך היא מתנהגת</p>
-                            <Row label="תשואה בעבר, לשנה (3 שנים)" value={pct(s?.annualReturnPct)} className={tone(s?.annualReturnPct)} />
-                            <Row label="תנודתיות" value={pct(s?.annualVolPct, false)} className="text-foreground" />
-                            <Row label="הנפילה הגרועה (3 שנים)" value={pct(s?.maxDrawdownPct)} className="text-down" />
-                            <Row label="מול ממוצע 200 הימים" value={pct(s?.vsMa200Pct)} className={tone(s?.vsMa200Pct)} />
-                            <Row label="מול השיא השנתי" value={pct(s?.fromHigh52wPct)} className={tone(s?.fromHigh52wPct)} />
-                            <Row label="קשר לשאר התיק" value={h.correlationWithRest == null ? 'המניה היחידה' : `מתאם ${h.correlationWithRest.toFixed(2)}`} className="text-foreground" />
+                            <p className="kicker">מה קרה לה בשלוש השנים האחרונות</p>
+                            <Row label="עלתה בממוצע לשנה" value={pct(s?.annualReturnPct)} className={tone(s?.annualReturnPct)} />
+                            <Row label="כמה היא קופצת בשנה רגילה" value={s ? `±${s.annualVolPct.toFixed(0)}%` : '—'} className="text-foreground" />
+                            <Row label="הירידה הכי גדולה" value={pct(s?.maxDrawdownPct)} className="text-down" />
+                            <Row label="מול המחיר הממוצע ב-10 החודשים האחרונים" value={pct(s?.vsMa200Pct)} className={tone(s?.vsMa200Pct)} />
+                            <Row label="מול המחיר הגבוה בשנה האחרונה" value={pct(s?.fromHigh52wPct)} className={tone(s?.fromHigh52wPct)} />
+                            <Row label="זזה יחד עם שאר התיק?" value={h.correlationWithRest == null ? 'זו המניה היחידה בתיק' : h.correlationWithRest >= 0.6 ? 'כמעט תמיד' : h.correlationWithRest >= 0.3 ? 'לפעמים' : 'כמעט לא'} className="text-foreground" />
                         </div>
                     </section>
                 );

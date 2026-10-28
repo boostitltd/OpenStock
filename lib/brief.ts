@@ -15,7 +15,7 @@ export type BriefHolding = {
     targetPrice: number | null; targetDistancePct: number | null; targetReached: boolean; nextEarnings: string | null;
 };
 
-export type BriefIdea = { symbol: string; he: string; kind: 'index' | 'stock'; verdict: string; reasons: string[]; similarTo?: string; volBefore: number | null; volAfter: number | null };
+export type BriefIdea = { symbol: string; he: string; kind: 'index' | 'stock'; verdict: string; reasons: string[]; similarTo?: string; volBefore: number | null; volAfter: number | null; about?: string | null; systemPct?: number; rangeLowPct?: number | null; rangeHighPct?: number | null; business?: string | null };
 
 export type BriefBuy = { symbol: string; shares: number; amountBase: number; currency: Currency; price: number | null };
 
@@ -141,8 +141,8 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
                 cell(`${s.probBelowContributed.toFixed(0)}%${d !== null && Math.abs(d) >= 1 ? ` <span style="color:${d < 0 ? C.up : C.down};font-size:12px;">(${d > 0 ? 'עלה' : 'ירד'} מ-${b!.probBelowContributed.toFixed(0)}%)</span>` : ''}`),
             ];
         });
-        parts.push(table(['טווח', 'תרחיש רע', 'אמצע', 'תרחיש טוב', 'סיכוי להפסד'], rows));
-        parts.push(p(`תרחיש רע: אחד מכל עשרה מסלולים הסתיים מתחתיו. הסימולציה לוקחת מכל מניה את התנודות שלה בשלוש השנים האחרונות, ומניחה תשואה ממוצעת של ${now.assumedReturnPct}% בשנה${now.monthlyBudget ? ` והפקדה של ${e(money(now.monthlyBudget, base))} בחודש` : ''}.`, C.faint, 12.5));
+        parts.push(table(['בעוד', 'שנה רעה', 'שנה רגילה', 'שנה טובה', 'סיכוי להפסד'], rows));
+        parts.push(p(`"שנה רעה" ו"שנה טובה" הן מקרים שקורים בערך פעם בעשר שנים. החישוב לוקח מכל מניה את האופן שבו היא זזה בשלוש השנים האחרונות, ומניח שבממוצע היא תרוויח כמו שוק המניות, ${now.assumedReturnPct}% בשנה${now.monthlyBudget ? ` והפקדה של ${e(money(now.monthlyBudget, base))} בחודש` : ''}.`, C.faint, 12.5));
         if (drivers.length) parts.push(p(`מה הזיז את התחזית: ${drivers.map(e).join('. ')}.`));
         if (!now.monthlyBudget) parts.push(p('עוד לא הוגדר סכום חודשי, ולכן התחזית לא כוללת את ההפקדות. מגדירים אותו בעמוד יום קנייה.', C.sub, 13.5));
     } else parts.push(p('אין עוד מספיק היסטוריה משותפת לסימולציה.'));
@@ -185,11 +185,14 @@ export function composeBrief(now: BriefNow, prev: BriefPrev, appUrl: string): { 
     parts.push(h2('רעיונות לקנייה'));
     const ideaRow = (i: BriefIdea) => `<tr><td style="${FF}padding:10px 0;border-bottom:1px solid ${C.line};">
         <div style="font-size:15px;color:${C.text};font-weight:600;">${e(i.he)} <span style="color:${C.faint};font-size:12px;font-weight:400;">${ltr(i.symbol)}</span>${!prevTop.has(i.symbol) && prev ? ` <span style="color:${C.brand};font-size:12px;">חדש ברשימה</span>` : ''}</div>
-        <div style="font-size:13.5px;color:${C.sub};line-height:1.6;">${i.reasons.slice(0, 3).map(e).join(' · ')}</div></td></tr>`;
+        ${i.about ? `<div style="font-size:13.5px;color:${C.sub};line-height:1.6;">${e(i.about)}</div>` : ''}
+        ${i.systemPct !== undefined ? `<div style="font-size:14px;color:${C.text};line-height:1.7;">הערכה לשנה: <b style="color:${i.systemPct >= 0 ? C.up : C.down};">${ltr(`${i.systemPct > 0 ? '+' : ''}${i.systemPct.toFixed(0)}%`)}</b>${i.rangeLowPct != null && i.rangeHighPct != null ? ` <span style="color:${C.faint};font-size:12.5px;">(בשנה רעה ${ltr(`${i.rangeLowPct}%`)}, בשנה טובה ${ltr(`+${i.rangeHighPct}%`)})</span>` : ''}</div>` : ''}
+        ${i.business ? `<div style="font-size:13.5px;color:${C.sub};line-height:1.6;">העסק: ${e(i.business)}</div>` : ''}
+        <div style="font-size:13.5px;color:${C.sub};line-height:1.6;">${i.reasons.slice(0, 2).map(e).join(' · ')}</div></td></tr>`;
     const ideaRows = [topIndex, ...topStocks].filter((x): x is BriefIdea => Boolean(x));
     if (ideaRows.length) {
         parts.push(`<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">${ideaRows.map(ideaRow).join('')}</table>`);
-        parts.push(p('הדירוג לא מנחש איזו מניה תעלה. הוא מודד מה כל מועמדת עושה לסיכון של התיק שלך, ומסנן מניות שיורדות עכשיו, יקרות מאוד או תנודתיות מאוד.', C.faint, 12.5));
+        parts.push(p('ההערכה לשנה מתחילה מהממוצע של שוק המניות, 7%, וזזה לכיוון הצפי של האנליסטים לפי כמה אנליסטים יש. מניות שיורדות עכשיו, יקרות מאוד או קופצות חזק מדי לא נכנסות לרשימה.', C.faint, 12.5));
     } else parts.push(p('אף מועמדת לא עוברת את כל הבדיקות השבוע.'));
 
     parts.push(`<p style="${FF}margin:26px 0 0;"><a href="${e(appUrl)}/portfolio/ideas" style="display:inline-block;background:${C.brand};color:#fff;text-decoration:none;padding:11px 20px;border-radius:10px;font-size:15px;font-weight:600;">לכל הרעיונות</a> &nbsp; <a href="${e(appUrl)}/portfolio/outlook" style="color:${C.brand};font-size:14px;">לתחזית המלאה</a></p>`);

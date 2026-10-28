@@ -5,6 +5,7 @@
 // checks flag the ones to hold off on: a falling price, a stretched valuation, or a stock that is the same
 // bet as what is already held.
 
+import { le } from '@/lib/format';
 import { alignReturns, correlation, portfolioStats, seriesStats, simulate, type Series, type SeriesStats, type SimResult } from '@/lib/forecast';
 
 export type Verdict = 'buy' | 'wait' | 'weak' | 'same';
@@ -43,6 +44,7 @@ type Context = {
     monthly: number;
     driftAnnual: number;
     weightPct: number;           // the share of the portfolio the candidate is tested at
+    heldNames?: string[];        // Hebrew names of what is held, so reasons can say "Phoenix" instead of "the portfolio"
     paths?: number;
 };
 
@@ -99,27 +101,28 @@ export function scoreIdea(ctx: Context, base: Baseline, candidate: Series, price
     const expensive = valuation !== null && valuation > EXPENSIVE_PE;
     const same = corr !== null && corr >= SAME_BET_CORRELATION;
 
+    const held = ctx.heldNames?.length === 1 ? ctx.heldNames[0] : 'המניות שכבר יש לך';
     const risky = stats.annualVolPct > RISKY_VOL || stats.maxDrawdownPct < RISKY_DRAWDOWN;
     const related = corr !== null && corr >= FITS_CORRELATION;
 
     let verdict: Verdict;
     if (same) {
         verdict = 'same';
-        reasons.push(`זזה כמעט כמו התיק שלך (מתאם ${corr!.toFixed(2)}), אז זה עוד מאותו הימור`);
+        reasons.push(`זזה כמעט כמו ${held}, אז היא לא מאזנת את התיק אלא מגדילה את אותו הימור`);
     } else {
-        if (volCut !== null && volCut <= -1) reasons.push(`מורידה את התנודתיות של התיק מ-${base.stats!.annualVolPct.toFixed(0)}% ל-${after!.annualVolPct.toFixed(0)}%`);
-        if (after && base.stats && after.maxDrawdownPct - base.stats.maxDrawdownPct >= 2) reasons.push(`הנפילה הגרועה של התיק הייתה קטנה יותר: ${Math.abs(after.maxDrawdownPct).toFixed(0)}% במקום ${Math.abs(base.stats.maxDrawdownPct).toFixed(0)}%`);
-        if (corr !== null && corr < 0.3) reasons.push(`כמעט לא קשורה למה שכבר יש לך (מתאם ⁦${corr.toFixed(2)}⁩)`);
-        if (related) reasons.push(`די קשורה למה שכבר יש לך (מתאם ${corr!.toFixed(2)})`);
+        if (volCut !== null && volCut <= -1) reasons.push(`מקטינה את הקפיצות של התיק: בשנה רגילה התיק יזוז בערך ${after!.annualVolPct.toFixed(0)}% למעלה או למטה, במקום ${base.stats!.annualVolPct.toFixed(0)}%`);
+        if (after && base.stats && after.maxDrawdownPct - base.stats.maxDrawdownPct >= 2) reasons.push(`בשלוש השנים האחרונות, הירידה הכי גדולה של התיק הייתה ${Math.abs(after.maxDrawdownPct).toFixed(0)}% במקום ${Math.abs(base.stats.maxDrawdownPct).toFixed(0)}%`);
+        if (corr !== null && corr < 0.3) reasons.push(`כמעט לא זזה יחד עם ${held}, ולכן מאזנת את התיק`);
+        if (related) reasons.push(`די קשורה ${le(held)}: בימים רעים הן נוטות לרדת יחד`);
         const weak = related || ((probCut === null || probCut > -1) && (volCut === null || volCut > -1));
-        if (falling) reasons.push(`המחיר ${Math.abs(stats.vsMa200Pct!).toFixed(0)}% מתחת לממוצע 200 הימים: עדיף לחכות שהירידה תיעצר`);
-        if (expensive) reasons.push(`מכפיל רווח ${valuation!.toFixed(0)}: יקרה`);
-        if (risky) reasons.push(`תנודתית מאוד: ${stats.annualVolPct.toFixed(0)}% בשנה, ונפלה עד ${Math.abs(stats.maxDrawdownPct).toFixed(0)}% בשלוש השנים האחרונות`);
+        if (falling) reasons.push(`המחיר בירידה: ${Math.abs(stats.vsMa200Pct!).toFixed(0)}% מתחת למחיר הממוצע של עשרת החודשים האחרונים. עדיף לחכות שהירידה תיעצר`);
+        if (expensive) reasons.push(`יקרה: המחיר שווה ${valuation!.toFixed(0)} שנים של הרווח שלה היום`);
+        if (risky) reasons.push(`קופצת מאוד: בשנה רגילה זזה ${stats.annualVolPct.toFixed(0)}% למעלה או למטה, ובשלוש השנים האחרונות ירדה בשלב מסוים ב-${Math.abs(stats.maxDrawdownPct).toFixed(0)}%`);
         verdict = falling || expensive || risky ? 'wait' : weak ? 'weak' : 'buy';
-        if (weak && !related) reasons.push('תורמת מעט לפיזור הסיכון של התיק');
+        if (weak && !related) reasons.push('מוסיפה מעט איזון לתיק');
     }
-    if (analystUpsidePct !== null && (fundamentals?.analysts ?? 0) >= 3) reasons.push(`יעד ממוצע של ${fundamentals!.analysts} אנליסטים: ${analystUpsidePct >= 0 ? `${analystUpsidePct.toFixed(0)}% מעל המחיר` : `${Math.abs(analystUpsidePct).toFixed(0)}% מתחת למחיר`}`);
-    if (fundamentals?.dividendYieldPct && fundamentals.dividendYieldPct >= 3) reasons.push(`דיבידנד ${fundamentals.dividendYieldPct.toFixed(1)}% בשנה`);
+    if (analystUpsidePct !== null && (fundamentals?.analysts ?? 0) >= 3) reasons.push(`${fundamentals!.analysts} אנליסטים צופים בממוצע ${analystUpsidePct >= 0 ? `עלייה של ${analystUpsidePct.toFixed(0)}%` : `ירידה של ${Math.abs(analystUpsidePct).toFixed(0)}%`} בשנה הקרובה`);
+    if (fundamentals?.dividendYieldPct && fundamentals.dividendYieldPct >= 3) reasons.push(`מחלקת דיבידנד של ${fundamentals.dividendYieldPct.toFixed(1)}% בשנה`);
 
     // Rank on the risk of the combined portfolio: its volatility, plus a quarter-weight on its worst drop. Not on
     // the chance of loss: with every stock assumed to earn the same average, a wilder stock lifts the simulated

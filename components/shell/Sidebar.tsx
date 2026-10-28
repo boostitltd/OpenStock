@@ -52,10 +52,10 @@ const Sidebar = ({ user, watchlist }: SidebarProps) => {
                     <Star /> <span className="flex-1">רשימת מעקב</span>
                     <span className="num text-xs text-faint">{watchlist.length}</span>
                 </Link>
-                <Link href="/portfolio" className={cn('side-item', pathname.startsWith('/portfolio') && pathname !== '/portfolio/ideas' && 'is-active')}>
+                <Link href="/portfolio" className={cn('side-item', pathname.startsWith('/portfolio') && !pathname.startsWith('/portfolio/ideas') && 'is-active')}>
                     <Briefcase /> התיק
                 </Link>
-                <Link href="/portfolio/ideas" className={cn('side-item', pathname === '/portfolio/ideas' && 'is-active')}>
+                <Link href="/portfolio/ideas" className={cn('side-item', pathname.startsWith('/portfolio/ideas') && 'is-active')}>
                     <Lightbulb /> מה לקנות
                 </Link>
             </nav>

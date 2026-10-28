@@ -15,10 +15,10 @@ export default async function OutlookPage({ searchParams }: { searchParams: Prom
     const { base, stats, sims, holdings } = outlook;
 
     const tiles = stats ? [
-        { label: 'תשואה בעבר', value: pct(stats.annualReturnPct), sub: 'בשנה, בשלוש השנים האחרונות · לא מוקרנת קדימה', icon: Activity, tone: stats.annualReturnPct >= 0 ? 'text-up' : 'text-down' },
-        { label: 'תנודתיות', value: pct(stats.annualVolPct, false), sub: 'התנודה הרגילה בשנה', icon: Activity },
-        { label: 'הנפילה הגרועה', value: pct(stats.maxDrawdownPct), sub: 'מהשיא לשפל, בשלוש השנים האחרונות', icon: TrendingDown, tone: 'text-down' },
-        { label: 'היסטוריה בשימוש', value: `${outlook.historyDays} ימים`, sub: outlook.historyFrom ? `מ-${dateHe(outlook.historyFrom)}` : '', icon: CalendarCheck },
+        { label: 'כמה התיק עשה בעבר', value: pct(stats.annualReturnPct), sub: 'בממוצע לשנה, בשלוש השנים האחרונות. לא מניחים שזה יחזור', icon: Activity, tone: stats.annualReturnPct >= 0 ? 'text-up' : 'text-down' },
+        { label: 'כמה התיק קופץ', value: `±${stats.annualVolPct.toFixed(0)}%`, sub: 'בשנה רגילה, למעלה או למטה', icon: Activity },
+        { label: 'הירידה הכי גדולה', value: pct(stats.maxDrawdownPct), sub: 'מהשיא עד השפל, בשלוש השנים האחרונות', icon: TrendingDown, tone: 'text-down' },
+        { label: 'על כמה ימים זה מבוסס', value: `${outlook.historyDays} ימי מסחר`, sub: outlook.historyFrom ? `מ-${dateHe(outlook.historyFrom)}` : '', icon: CalendarCheck },
     ] : [];
 
     return (
@@ -27,7 +27,7 @@ export default async function OutlookPage({ searchParams }: { searchParams: Prom
                 <div>
                     <h1 className="page-title">תחזית</h1>
                     <p className="page-sub">
-                        טווחים, לא ניבוי. כל סימולציה לוקחת את התנודות, הנפילות והתנועה המשותפת של המניות שלך בשלוש השנים האחרונות, אבל מניחה תשואה ממוצעת של שוק, {outlook.assumedReturnPct}% בשנה, במקום לחזור על המגמה שלהן בעבר.
+                        אף אחד לא יודע מה יקרה, אז במקום מספר אחד יש טווח: מה קורה בשנה רעה, בשנה רגילה ובשנה טובה. המערכת מריצה אלפי שנים אפשריות לפי איך שהמניות שלך זזו בשלוש השנים האחרונות, ומניחה שבממוצע הן ירוויחו כמו שוק המניות, {outlook.assumedReturnPct}% בשנה.
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -61,7 +61,7 @@ export default async function OutlookPage({ searchParams }: { searchParams: Prom
 
                     <Panel
                         title="איפה התיק יכול להיות"
-                        sub={`מתחילים מ-${money(outlook.totalValue, base)}${outlook.monthlyBudget ? `, ומוסיפים ${money(outlook.monthlyBudget, base)} בחודש לפי משקלי היעד` : ', בלי הפקדה חודשית'} · הנחה של ${outlook.assumedReturnPct}% בשנה · 2,000 מסלולים`}
+                        sub={`התיק שווה היום ${money(outlook.totalValue, base)}${outlook.monthlyBudget ? `, ומוסיפים ${money(outlook.monthlyBudget, base)} בחודש לפי משקלי היעד` : ', בלי הפקדה חודשית'} · מחושב על 2,000 שנים אפשריות`}
                         className="mb-3"
                     >
                         {sims.length === 0 ? (
@@ -71,13 +71,13 @@ export default async function OutlookPage({ searchParams }: { searchParams: Prom
                                 <table className="data-table">
                                     <thead>
                                         <tr>
-                                            <th>טווח</th>
-                                            <th className="is-num">הכסף שנכנס</th>
-                                            <th className="is-num">תרחיש רע (10%)</th>
-                                            <th className="is-num">אמצע (50%)</th>
-                                            <th className="is-num">תרחיש טוב (90%)</th>
+                                            <th>בעוד</th>
+                                            <th className="is-num">הכסף שהכנסת</th>
+                                            <th className="is-num">שנה רעה</th>
+                                            <th className="is-num">שנה רגילה</th>
+                                            <th className="is-num">שנה טובה</th>
                                             <th className="is-num">סיכוי להפסד</th>
-                                            <th className="is-num">צמיחה באמצע, לשנה</th>
+                                            <th className="is-num">באמצע, כמה בשנה</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -97,11 +97,11 @@ export default async function OutlookPage({ searchParams }: { searchParams: Prom
                             </div>
                         )}
                         <p className="px-4 pb-3 pt-2 text-[12px] text-faint">
-                            תרחיש רע: אחד מכל עשרה מסלולים הסתיים מתחתיו. תרחיש טוב: אחד מכל עשרה הסתיים מעליו. סיכוי להפסד: המסלולים שהסתיימו מתחת לכסף שנכנס. הפיזור מגיע מההיסטוריה של המניות שלך, והממוצע של {outlook.assumedReturnPct}% לא, ולכן מניה ששילשה את עצמה לא אמורה לשלש שוב. אחזקות בדולרים מומרות בשער של היום, ותנועת הדולר עצמה לא נכנסת לסימולציה.
+                            איך לקרוא: "שנה רעה" קורית בערך פעם בעשר שנים, וכך גם "שנה טובה". "שנה רגילה" היא האמצע. "סיכוי להפסד" הוא כמה מהשנים האפשריות נגמרו עם פחות כסף ממה שהכנסת. מניה שעלתה הרבה בעבר לא אמורה לחזור על זה, ולכן ההנחה היא ממוצע של שוק. אחזקות בדולרים מחושבות בשער של היום.
                         </p>
                     </Panel>
 
-                    <Panel title="כל מניה" sub="ההיסטוריה שלה, האנליסטים, וההבטחה שבגללה קנית אותה" className="mb-3">
+                    <Panel title="כל מניה בתיק" sub="מה קרה לה, מה האנליסטים אומרים, והסיבה שבגללה קנית אותה" className="mb-3">
                         <OutlookHoldings holdings={holdings} base={base} />
                     </Panel>
                 </>

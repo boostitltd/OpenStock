@@ -70,14 +70,13 @@ export default function WhatIfCard({ whatIf, base, hasHoldings, initialSymbol, i
                         <span className="text-[15px] font-semibold text-foreground">{name}</span>
                         {name !== whatIf.symbol && <span dir="ltr" className="mono text-[13px] text-faint">{whatIf.symbol}</span>}
                         <span className="num text-[13px] text-muted-foreground">{whatIf.price ? formatPrice(whatIf.price, whatIf.currency) : ''}</span>
-                        {whatIf.stats && <span className="text-[13px] text-faint">בשלוש השנים האחרונות: <span dir="ltr">{pct(whatIf.stats.annualReturnPct)}</span> בשנה, תנודתיות {pct(whatIf.stats.annualVolPct, false)}, נפילה גרועה של {Math.abs(whatIf.stats.maxDrawdownPct).toFixed(1)}%</span>}
+                        {whatIf.stats && <span className="text-[13px] text-faint">בשלוש השנים האחרונות: <span dir="ltr">{pct(whatIf.stats.annualReturnPct)}</span> בממוצע לשנה, קופצת בערך {whatIf.stats.annualVolPct.toFixed(0)}% בשנה רגילה, וירדה לכל היותר {Math.abs(whatIf.stats.maxDrawdownPct).toFixed(0)}%</span>}
                         {whatIf.fundamentals?.targetMeanPrice && <span className="text-[13px] text-faint">אנליסטים: {formatPrice(whatIf.fundamentals.targetMeanPrice, whatIf.currency)} ({whatIf.fundamentals.analysts})</span>}
                     </div>
 
                     {whatIf.correlationWithPortfolio != null && (
-                        <p className="text-[13px] text-muted-foreground">
-                            המתאם שלה עם התיק הנוכחי הוא <span className="num font-semibold text-foreground">{whatIf.correlationWithPortfolio.toFixed(2)}</span>
-                            {whatIf.correlationWithPortfolio >= 0.7 ? ': בעיקר אותו הימור, כמעט בלי פיזור.' : whatIf.correlationWithPortfolio >= 0.4 ? ': קשורה, פיזור חלקי.' : ': זזה בעיקר לבד, פיזור אמיתי.'}
+                        <p className="text-[13.5px] text-foreground">
+                            {whatIf.correlationWithPortfolio >= 0.6 ? 'היא זזה כמעט כמו התיק שלך, אז היא לא מאזנת אותו.' : whatIf.correlationWithPortfolio >= 0.3 ? 'היא זזה לפעמים יחד עם התיק שלך: מאזנת קצת.' : 'היא כמעט לא זזה יחד עם התיק שלך, ולכן מאזנת אותו.'}
                         </p>
                     )}
 
@@ -88,9 +87,9 @@ export default function WhatIfCard({ whatIf, base, hasHoldings, initialSymbol, i
                                     <tr><th>עם {whatIf.weightPct}% ב{name}</th><th className="is-num">עכשיו</th><th className="is-num">אחרי</th><th className="is-num">שינוי</th></tr>
                                 </thead>
                                 <tbody>
-                                    <Compare label="תשואה בעבר, לשנה" before={whatIf.before?.annualReturnPct} after={whatIf.after?.annualReturnPct} betterWhen="higher" />
-                                    <Compare label="תנודתיות" before={whatIf.before?.annualVolPct} after={whatIf.after?.annualVolPct} betterWhen="lower" />
-                                    <Compare label="הנפילה הגרועה" before={whatIf.before?.maxDrawdownPct} after={whatIf.after?.maxDrawdownPct} betterWhen="closer-to-zero" />
+                                    <Compare label="כמה התיק עשה בעבר, לשנה" before={whatIf.before?.annualReturnPct} after={whatIf.after?.annualReturnPct} betterWhen="higher" />
+                                    <Compare label="כמה התיק קופץ בשנה" before={whatIf.before?.annualVolPct} after={whatIf.after?.annualVolPct} betterWhen="lower" />
+                                    <Compare label="הירידה הכי גדולה" before={whatIf.before?.maxDrawdownPct} after={whatIf.after?.maxDrawdownPct} betterWhen="closer-to-zero" />
                                 </tbody>
                             </table>
                         </div>
@@ -100,7 +99,7 @@ export default function WhatIfCard({ whatIf, base, hasHoldings, initialSymbol, i
                         <div className="overflow-x-auto rounded-[12px]">
                             <table className="data-table">
                                 <thead>
-                                    <tr><th>3 שנים, בסימולציה</th><th className="is-num">תרחיש רע (10%)</th><th className="is-num">אמצע</th><th className="is-num">תרחיש טוב (90%)</th><th className="is-num">סיכוי להפסד</th></tr>
+                                    <tr><th>3 שנים, בסימולציה</th><th className="is-num">שנה רעה (1 מ-10)</th><th className="is-num">רגילה</th><th className="is-num">שנה טובה (1 מ-10)</th><th className="is-num">סיכוי להפסד</th></tr>
                                 </thead>
                                 <tbody>
                                     {whatIf.sim3yBefore && (

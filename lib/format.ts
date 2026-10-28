@@ -16,3 +16,19 @@ export const num = (v: number, digits = 0) => new Intl.NumberFormat('he-IL', { m
 export const dateHe = (iso: string | Date) => new Date(iso).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: 'Asia/Jerusalem' });
 
 export const yearsHe = (n: number) => (n === 1 ? 'שנה' : n === 2 ? 'שנתיים' : `${n} שנים`);
+
+// The Hebrew preposition ל- in front of a name: the ה of a definite name merges into it (הפניקס, לפניקס).
+export const le = (name: string) => (name.startsWith('ה') ? `ל${name.slice(1)}` : `ל${name}`);
+
+// Company-sized amounts: "7.9 מיליארד $".
+export const bigMoney = (v: number, currency: string) => {
+    const sign = currency === 'USD' ? '$' : currency === 'ILS' ? '₪' : currency;
+    const a = Math.abs(v);
+    const n = a >= 1e9 ? `${(v / 1e9).toFixed(1)} מיליארד` : a >= 1e6 ? `${(v / 1e6).toFixed(0)} מיליון` : new Intl.NumberFormat('he-IL').format(Math.round(v));
+    return `${n} ${sign}`;
+};
+
+export const signedPct = (v: number, digits = 0) => `${v > 0 ? '+' : v < 0 ? '-' : ''}${Math.abs(v).toFixed(digits)}%`;
+
+// A change said in words inside a sentence, so no sign can jump sides: "עלייה של 23%".
+export const changeWords = (v: number, digits = 0) => (v >= 0 ? `עלייה של ${v.toFixed(digits)}%` : `ירידה של ${Math.abs(v).toFixed(digits)}%`);

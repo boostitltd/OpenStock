@@ -640,10 +640,14 @@
     .data-table tbody tr { transition: background-color 150ms var(--ui-ease); }
     .data-table tbody tr:hover td { background: oklch(1 0 0 / 0.035); }
     .data-table tbody tr:last-child td { border-bottom: 0; }
-    .data-table .is-num { text-align: end; }
+    /* Number columns sit on the left edge, headers included. Physical "left", not "end": with unicode-bidi:
+       plaintext below, "end" follows each cell's own text, so "+5.6%" went right while a Hebrew header went left. */
+    .data-table .is-num { text-align: left; }
     /* Numbers inside Hebrew text: a sign or a % must stay on its own side of the digits. plaintext takes the
        direction from the first strong letter, so "+5.3%" lays out left to right and "מ-35% ל-26%" right to left. */
     .num, .is-num, .bento-value { unicode-bidi: plaintext; }
+    /* A tile's big number lines up under its Hebrew label, on the right, whatever its own direction */
+    .bento-value, .bento-foot { text-align: right; }
 
     .row-list > * + * { border-top: 1px solid oklch(1 0 0 / 0.05); }
 

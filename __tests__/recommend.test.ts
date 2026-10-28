@@ -35,7 +35,7 @@ describe('buy ideas', () => {
         expect(Math.abs(idea.correlation!)).toBeLessThan(0.2);
         expect(idea.probLossAfter!).toBeLessThan(base.sim3y!.probBelowContributed);
         expect(idea.verdict).toBe('buy');
-        expect(idea.reasons.join(' ')).toContain('מורידה את התנודתיות');
+        expect(idea.reasons.join(' ')).toContain('מקטינה את הקפיצות');
     });
 
     it('holds off on a wild stock even when it diversifies', () => {

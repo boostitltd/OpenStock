@@ -163,6 +163,25 @@ export type YahooFundamentals = {
     recommendation: string | null;   // Yahoo's key: strong_buy / buy / hold / underperform / sell / none
     trailingPE: number | null; forwardPE: number | null; dividendYieldPct: number | null;
     nextEarnings: string | null;     // ISO date
+    business: YahooBusiness | null;
+};
+
+// How the company itself is doing, in the currency it reports in (Elbit reports in dollars, Bezeq in shekels).
+// Rows Yahoo fills with zeros or stale years are dropped, so a short list means "partial data", never a fake trend.
+export type YahooBusiness = {
+    currency: string;
+    yearly: { year: number; revenue: number; earnings: number | null }[];      // oldest first
+    quarterly: { quarter: string; revenue: number; earnings: number | null }[];
+    revenueGrowthPct: number | null;      // latest quarter vs the same quarter a year earlier
+    earningsGrowthPct: number | null;
+    profitMarginPct: number | null;
+    operatingMarginPct: number | null;
+    roePct: number | null;
+    debtToEquityPct: number | null;
+    freeCashflow: number | null;
+    nextYearEarningsGrowthPct: number | null;  // analysts' estimate
+    nextYearRevenueGrowthPct: number | null;
+    recommendations: { strongBuy: number; buy: number; hold: number; sell: number; strongSell: number } | null;
 };
 
 // Yahoo's quoteSummary needs a session cookie and a "crumb"; both are fetched once and reused for the process.
@@ -187,6 +206,38 @@ async function yahooCrumb(): Promise<{ cookie: string; crumb: string } | null> {
 const fundamentalsCache = new Map<string, { value: YahooFundamentals | null; freshUntil: number }>();
 const num = (v: unknown): number | null => (v && typeof v === 'object' && 'raw' in v && typeof (v as { raw: unknown }).raw === 'number' ? (v as { raw: number }).raw : typeof v === 'number' ? v : null);
 
+const pctOf = (v: number | null) => (v === null ? null : Math.round(v * 1000) / 10);
+
+// Exported for tests. Yahoo pads TASE companies with zero rows and years long gone (Strauss shows 2017 next to 2025);
+// keep only real revenue from the last five years.
+export function parseBusiness(r: Record<string, Record<string, unknown>>): YahooBusiness | null {
+    const fd = (r.financialData ?? {}) as Record<string, unknown>;
+    const chart = ((r.earnings ?? {}) as { financialsChart?: { yearly?: Record<string, unknown>[]; quarterly?: Record<string, unknown>[] } }).financialsChart ?? {};
+    const thisYear = new Date().getFullYear();
+    const yearly = (chart.yearly ?? [])
+        .map((y) => ({ year: Number(y.date), revenue: num(y.revenue) ?? 0, earnings: num(y.earnings) }))
+        .filter((y) => y.revenue > 0 && y.year >= thisYear - 5)
+        .sort((a, b) => a.year - b.year);
+    const quarterly = (chart.quarterly ?? [])
+        .map((q) => ({ quarter: String(q.date ?? ''), revenue: num(q.revenue) ?? 0, earnings: num(q.earnings) }))
+        .filter((q) => q.revenue > 0 && q.quarter);
+    const trend = (((r.earningsTrend ?? {}) as { trend?: Record<string, unknown>[] }).trend ?? []).find((t) => t.period === '+1y');
+    const rt = (((r.recommendationTrend ?? {}) as { trend?: Record<string, unknown>[] }).trend ?? []).find((t) => t.period === '0m');
+    const recs = rt ? { strongBuy: Number(rt.strongBuy) || 0, buy: Number(rt.buy) || 0, hold: Number(rt.hold) || 0, sell: Number(rt.sell) || 0, strongSell: Number(rt.strongSell) || 0 } : null;
+    const business: YahooBusiness = {
+        currency: typeof fd.financialCurrency === 'string' ? fd.financialCurrency : 'ILS',
+        yearly, quarterly,
+        revenueGrowthPct: pctOf(num(fd.revenueGrowth)), earningsGrowthPct: pctOf(num(fd.earningsGrowth)),
+        profitMarginPct: pctOf(num(fd.profitMargins)), operatingMarginPct: pctOf(num(fd.operatingMargins)),
+        roePct: pctOf(num(fd.returnOnEquity)), debtToEquityPct: num(fd.debtToEquity), freeCashflow: num(fd.freeCashflow),
+        nextYearEarningsGrowthPct: pctOf(num(trend?.growth)),
+        nextYearRevenueGrowthPct: pctOf(num((trend?.revenueEstimate as Record<string, unknown> | undefined)?.growth)),
+        recommendations: recs && Object.values(recs).some((n) => n > 0) ? recs : null,
+    };
+    const empty = !yearly.length && !quarterly.length && business.revenueGrowthPct === null && business.profitMarginPct === null;
+    return empty ? null : business;
+}
+
 // Analyst targets, multiples, dividend yield and the next earnings date, cached for 24 hours. Null when Yahoo
 // has nothing (common for small Tel Aviv names), never a made-up value.
 export async function getYahooFundamentals(symbol: string): Promise<YahooFundamentals | null> {
@@ -196,7 +247,7 @@ export async function getYahooFundamentals(symbol: string): Promise<YahooFundame
     const auth = await yahooCrumb();
     if (!auth) return hit?.value ?? null;
     try {
-        const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=financialData,summaryDetail,calendarEvents&crumb=${encodeURIComponent(auth.crumb)}`;
+        const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=financialData,summaryDetail,calendarEvents,earnings,earningsTrend,recommendationTrend&crumb=${encodeURIComponent(auth.crumb)}`;
         const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Cookie: auth.cookie, Accept: 'application/json' }, signal: AbortSignal.timeout(8000), cache: 'no-store' });
         if (res.status === 401) crumbState = null;
         if (!res.ok) throw new Error(`Yahoo quoteSummary ${res.status} for ${symbol}`);
@@ -214,6 +265,7 @@ export async function getYahooFundamentals(symbol: string): Promise<YahooFundame
             trailingPE: num(sd.trailingPE), forwardPE: num(sd.forwardPE),
             dividendYieldPct: num(sd.dividendYield) !== null ? Math.round(num(sd.dividendYield)! * 10000) / 100 : null,
             nextEarnings: earnings ? new Date(earnings * 1000).toISOString().slice(0, 10) : null,
+            business: parseBusiness(r),
         };
         fundamentalsCache.set(key, { value, freshUntil: Date.now() + 24 * 3600 * 1000 });
         return value;

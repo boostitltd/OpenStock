@@ -1,81 +1,29 @@
 import Link from "next/link";
-import { Briefcase, CalendarCheck, FlaskConical, Lightbulb, Telescope } from "lucide-react";
+import { Briefcase, CalendarCheck, Lightbulb, Telescope } from "lucide-react";
 import Panel from "@/components/Panel";
 import SendBriefButton from "@/components/portfolio/SendBriefButton";
+import IdeaCard from "@/components/portfolio/IdeaCard";
 import { getIdeas } from "@/lib/actions/ideas.actions";
 import type { IdeaRow } from "@/lib/server/ideas";
-import { dateHe, pct, price } from "@/lib/format";
-import { hebrewName } from "@/lib/universe";
+import { dateHe, signedPct } from "@/lib/format";
 
 export const metadata = { title: 'מה לקנות | OpenStock' };
 
-const VERDICT = {
-    buy: { label: 'מתאימה לקנייה', cls: 'is-up' },
-    wait: { label: 'לחכות', cls: 'is-brand' },
-    weak: { label: 'תורמת מעט', cls: '' },
-    same: { label: 'אותו הימור', cls: 'is-down' },
-} as const;
-
-function Metric({ label, before, after }: { label: string; before: number | null; after: number | null }) {
-    if (before == null || after == null) return null;
-    const better = Math.abs(after) < Math.abs(before);
-    return (
-        <div className="flex items-baseline justify-between gap-3 text-[13px]">
-            <span className="text-faint">{label}</span>
-            <span className="num">
-                <span className="text-muted-foreground">מ-{Math.abs(before).toFixed(0)}%</span>
-                <span className="mx-1 text-faint">ל-</span>
-                <span className={better ? 'font-semibold text-up' : 'font-semibold text-down'}>{Math.abs(after).toFixed(0)}%</span>
-            </span>
-        </div>
-    );
-}
-
-function IdeaCard({ idea, weightPct }: { idea: IdeaRow; weightPct: number }) {
-    const v = VERDICT[idea.verdict];
-    return (
-        <section className="flex flex-col gap-3 rounded-[12px] bg-page/60 p-4 shadow-[inset_0_0_0_1px_var(--line)]">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="truncate font-semibold text-foreground">{idea.entry.he}</p>
-                    <p className="text-[12px] text-faint"><span className="mono" dir="ltr">{idea.symbol}</span> · {idea.entry.sector}</p>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className={`pill ${v.cls}`}>{v.label}</span>
-                    {idea.price != null && <span className="num text-[13px] text-muted-foreground">{price(idea.price, idea.currency)}</span>}
-                </div>
-            </div>
-            {idea.similarTo && <p className="text-[12.5px] text-faint">זזה כמעט כמו {hebrewName(idea.similarTo)}: מספיקה אחת מהשתיים.</p>}
-            <ul className="flex list-disc flex-col gap-1 ps-4 text-[13px] leading-snug text-muted-foreground">
-                {idea.reasons.slice(0, 4).map((r) => <li key={r}>{r}</li>)}
-            </ul>
-            <div className="flex flex-col gap-1 border-t border-line pt-2">
-                <p className="kicker">התיק עם {weightPct}% בה</p>
-                <Metric label="תנודתיות בשנה" before={idea.volBefore} after={idea.volAfter} />
-                <Metric label="הנפילה הגרועה" before={idea.drawdownBefore} after={idea.drawdownAfter} />
-                <Metric label="סיכוי להפסד ב-3 שנים" before={idea.probLossBefore} after={idea.probLossAfter} />
-            </div>
-            <Link href={`/portfolio/outlook?add=${encodeURIComponent(idea.symbol)}&pct=${weightPct}`} className="btn btn-ghost self-start"><FlaskConical /> לבדוק בסימולציה</Link>
-        </section>
-    );
-}
-
-function CompactTable({ ideas }: { ideas: IdeaRow[] }) {
+function CompactTable({ ideas, why }: { ideas: IdeaRow[]; why: (i: IdeaRow) => string }) {
     return (
         <div className="overflow-x-auto rounded-[14px]">
             <table className="data-table">
                 <thead>
-                    <tr><th>מניה</th><th>ענף</th><th className="is-num">מתאם לתיק</th><th className="is-num">תנודתיות שלה</th><th className="is-num">מול ממוצע 200</th><th>למה</th></tr>
+                    <tr><th>מניה</th><th>מה היא עושה</th><th className="is-num">הערכה לשנה</th><th>למה ברשימה הזו</th><th /></tr>
                 </thead>
                 <tbody>
                     {ideas.map((i) => (
                         <tr key={i.symbol}>
-                            <td className="font-semibold text-foreground">{i.entry.he} <span className="mono text-[11.5px] font-normal text-faint" dir="ltr">{i.symbol}</span></td>
-                            <td className="text-faint">{i.entry.sector}</td>
-                            <td className="is-num">{i.correlation?.toFixed(2) ?? '—'}</td>
-                            <td className="is-num">{pct(i.stats?.annualVolPct, false, 0)}</td>
-                            <td className={`is-num ${(i.stats?.vsMa200Pct ?? 0) < 0 ? 'text-down' : 'text-up'}`}><span dir="ltr">{pct(i.stats?.vsMa200Pct, true, 0)}</span></td>
-                            <td className="text-[12.5px] text-muted-foreground">{i.reasons.filter((r) => !r.startsWith('מורידה') && !r.startsWith('הנפילה')).slice(0, 2).join(' · ')}</td>
+                            <td className="font-semibold text-foreground">{i.entry.he}</td>
+                            <td className="max-w-[260px] truncate text-[12.5px] text-faint" title={i.about ?? ''}>{i.entry.sector}</td>
+                            <td className={`is-num ${i.estimate.systemPct >= 0 ? 'text-up' : 'text-down'}`}>{signedPct(i.estimate.systemPct)}</td>
+                            <td className="min-w-[280px] whitespace-normal text-[12.5px] leading-snug text-muted-foreground">{why(i)}</td>
+                            <td><Link href={`/portfolio/ideas/${encodeURIComponent(i.symbol)}`} className="text-[12.5px] text-brand-ink hover:underline">פרטים</Link></td>
                         </tr>
                     ))}
                 </tbody>
@@ -84,7 +32,9 @@ function CompactTable({ ideas }: { ideas: IdeaRow[] }) {
     );
 }
 
-// What to buy next, measured by what each candidate does to this portfolio. Not a forecast of which stock rises.
+const firstOf = (i: IdeaRow, starts: string[]) => i.reasons.find((r) => starts.some((s) => r.startsWith(s))) ?? i.reasons[0] ?? '';
+
+// What to buy next. Each card answers: how much might it make, how is the business, what does it do for my portfolio.
 export default async function IdeasPage() {
     const r = await getIdeas();
     const indexes = r.ideas.filter((i) => i.entry.kind === 'index');
@@ -100,7 +50,7 @@ export default async function IdeasPage() {
                 <div>
                     <h1 className="page-title">מה לקנות</h1>
                     <p className="page-sub">
-                        אף מודל לא יודע איזו מניה תעלה, ולכן הדירוג לא מנחש את זה. כל מועמדת נבדקת לפי מה שהיא עושה לתיק שלך: בכמה היא מורידה את התנודתיות ואת הנפילה הגרועה, וכמה היא קשורה למה שכבר יש לך. מניה שיורדת עכשיו, יקרה מאוד או תנודתית מאוד מסומנת &quot;לחכות&quot;.
+                        לכל מניה שלוש תשובות: כמה אפשר להרוויח בשנה, איך העסק עצמו מתפקד, ומה היא עושה לתיק שלך. בכפתור &quot;כל מה שצריך כדי להחליט&quot; יש את כל הפרטים, כולל מה קורה בחברה עכשיו.
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -115,55 +65,55 @@ export default async function IdeasPage() {
                     <div className="empty-state">
                         <span className="empty-icon"><Lightbulb className="size-5" /></span>
                         <h3>הדירוג עובד הכי טוב מול תיק קיים</h3>
-                        <p className="max-w-sm">בלי מניות בתיק, המועמדות מדורגות לפי התנודתיות שלהן בלבד. רשמו קנייה בעמוד התיק, והדירוג יימדד מולה.</p>
+                        <p className="max-w-sm">רשמו קנייה בעמוד התיק, וכל מועמדת תימדד מול מה שכבר יש לכם.</p>
                     </div>
                 </Panel>
             )}
 
-            <Panel title="הבסיס: מדד רחב" sub={`מאות חברות בקנייה אחת. כל מדד נבדק כאילו הוא ${r.weightPct}% מהתיק.`} className="mb-3">
+            <Panel title="הבסיס: קרן על מדד רחב" sub="מאות חברות בקנייה אחת. זה מה שהכי מאזן תיק של מניה אחת או שתיים." className="mb-3">
                 <div className="grid gap-3 p-3 md:grid-cols-2 2xl:grid-cols-3">
-                    {indexes.map((i) => <IdeaCard key={i.symbol} idea={i} weightPct={r.weightPct} />)}
+                    {indexes.map((i) => <IdeaCard key={i.symbol} idea={i} />)}
                 </div>
                 <p className="px-4 pb-3 text-[12px] text-faint">
-                    את אותו מדד אפשר לקנות כקרן סל אמריקאית או כקרן מחקה בבורסה בתל אביב. קרן אמריקאית חשופה למס עיזבון אמריקאי מעל 60 אלף דולר, וקרן מחקה ישראלית לא. כדאי להשוות דמי ניהול בבנק או אצל הברוקר.
+                    את אותו מדד אפשר לקנות כקרן סל אמריקאית או כקרן מחקה בבורסה בתל אביב. בקרן אמריקאית יש חשיפה למס עיזבון אמריקאי מעל 60 אלף דולר, ובקרן מחקה ישראלית אין. כדאי להשוות דמי ניהול בבנק או אצל הברוקר.
                 </p>
             </Panel>
 
-            <Panel title="מניות בתל אביב שמתאימות לתיק" sub="הכי מורידות את הסיכון של התיק, בלי סימני אזהרה" className="mb-3">
+            <Panel title="מניות בתל אביב שמתאימות לתיק" sub="מאזנות את התיק, ואין בהן סימן אזהרה כרגע" className="mb-3">
                 {topStocks.length ? (
                     <div className="grid gap-3 p-3 md:grid-cols-2 2xl:grid-cols-3">
-                        {topStocks.map((i) => <IdeaCard key={i.symbol} idea={i} weightPct={r.weightPct} />)}
+                        {topStocks.map((i) => <IdeaCard key={i.symbol} idea={i} />)}
                     </div>
                 ) : <p className="px-4 py-6 text-[13.5px] text-faint">אף מניה לא עוברת את כל הבדיקות כרגע.</p>}
             </Panel>
 
             {wait.length > 0 && (
-                <Panel title="לחכות איתן" sub="מתאימות לתיק, אבל המחיר יורד, המכפיל גבוה או שהתנודתיות חריגה" className="mb-3">
-                    <CompactTable ideas={wait} />
+                <Panel title="לחכות איתן" sub="היו יכולות להתאים, אבל המחיר יורד עכשיו, יקר מאוד, או שהמניה קופצת חזק מדי" className="mb-3">
+                    <CompactTable ideas={wait} why={(i) => firstOf(i, ['המחיר בירידה', 'יקרה', 'קופצת'])} />
                 </Panel>
             )}
 
             {same.length > 0 && (
-                <Panel title="לא להוסיף: אותו הימור" sub="זזות כמעט כמו מה שכבר יש לך, אז הן מגדילות את הסיכון במקום לפזר אותו" className="mb-3">
-                    <CompactTable ideas={same} />
+                <Panel title="לא להוסיף: אותו הימור" sub="זזות כמעט כמו מה שכבר יש לך, אז הן מגדילות את הסיכון במקום לאזן אותו" className="mb-3">
+                    <CompactTable ideas={same} why={(i) => i.reasons[0] ?? ''} />
                 </Panel>
             )}
 
             {rest.length > 0 && (
-                <Panel title="שאר המועמדות" sub="עוברות את הבדיקות, אבל תורמות פחות מהרשימה שלמעלה" className="mb-3">
-                    <CompactTable ideas={rest} />
+                <Panel title="שאר המועמדות" sub="עוברות את הבדיקות, אבל מאזנות את התיק פחות מהרשימה שלמעלה" className="mb-3">
+                    <CompactTable ideas={rest} why={(i) => i.fit[0]?.text ?? ''} />
                 </Panel>
             )}
 
             <Panel title="סיכום שבועי במייל" sub="כל יום ראשון בבוקר: מה השתנה בתחזית, מה קרה במניות שלך ומה לקנות">
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-                    <p className="text-[13px] text-muted-foreground">הסיכום יוצא אוטומטית. אפשר גם לשלוח אותו עכשיו, כדי לראות איך הוא נראה.</p>
+                    <p className="text-[13px] text-muted-foreground">הסיכום יוצא אוטומטית. אפשר גם לשלוח אותו עכשיו.</p>
                     <SendBriefButton />
                 </div>
             </Panel>
 
-            <p className="mt-3 text-[12px] text-faint">
-                חושב ב-{dateHe(r.computedAt)} מנתוני Yahoo, שלוש שנות מחירים לכל מניה. כל המניות מניחות אותה תשואה ממוצעת, ולכן הדירוג משווה סיכון ולא רווח צפוי. זה כלי לקבלת החלטות, לא ייעוץ השקעות.
+            <p className="mt-3 text-[12px] leading-relaxed text-faint">
+                איך מחושבת ההערכה לשנה: מתחילים מהתשואה הממוצעת של שוק המניות, 7% בשנה, ומזיזים אותה לכיוון הצפי של האנליסטים לפי כמה אנליסטים יש. אנליסט אחד מזיז אותה שישית מהדרך, חמישה מזיזים אותה חצי. &quot;שנה רעה&quot; ו&quot;שנה טובה&quot; הן אחת מכל עשר שנים, לפי איך שהמניה זזה בשלוש השנים האחרונות. חושב ב-{dateHe(r.computedAt)} מנתוני Yahoo. זה כלי לקבלת החלטות, לא ייעוץ השקעות.
             </p>
         </>
     );
